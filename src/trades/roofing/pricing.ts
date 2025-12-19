@@ -56,15 +56,12 @@ function li(params: Omit<QuoteLineItem, "subtotal">): QuoteLineItem {
 }
 
 /**
- * ✅ Canonical pricing function for Roofing v1
- * - Deterministic
- * - Typed
- * - Uses the same args shape used for saving quotes + PDF export
+ * Canonical pricing function for Roofing v1
  */
 export function calculateRoofingQuote(params: {
   args: RoofingQuoteArgs;
   rateCard: RoofingRateCard;
-  savedCustomItems: SavedCustomItem[]; // can be "all my items" or already-filtered; we filter by IDs here
+  savedCustomItems: SavedCustomItem[]; // pass all; we filter by IDs inside
 }): RoofingPricingResult {
   const { args, rateCard, savedCustomItems } = params;
   const inputs: RoofingQuoteInputs = args.inputs;
@@ -109,7 +106,7 @@ export function calculateRoofingQuote(params: {
     })
   );
 
-  // Tear-off / disposal (v1: shown only if tearoff=true and checkbox selected)
+  // Tear-off / disposal (v1: only if tearoff=true and checkbox selected)
   if (inputs.tearoff && selections.tearoff_selected) {
     line_items.push(
       li({
@@ -193,7 +190,7 @@ export function calculateRoofingQuote(params: {
   const selectedIds = new Set(selections.selected_saved_custom_item_ids ?? []);
   const selectedSavedItems = savedCustomItems.filter((it) => selectedIds.has(it.id));
 
-  // NOTE: v1 treats per_unit saved items as qty=1 (no per-item qty UI yet)
+  // v1: per_unit saved items treated as qty=1 (no qty UI yet)
   for (const it of selectedSavedItems) {
     const qty = 1;
     const unit = it.pricing_type === "per_unit" ? it.unit_label ?? "unit" : "each";

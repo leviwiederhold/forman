@@ -86,9 +86,6 @@ export function NewQuoteClient({
     });
   }, [inputs, selections, rates, customItems]);
 
-  // ...rest of your file unchanged
-
-
   // keep layers + tearoff checkbox in sync
   React.useEffect(() => {
     if (!inputs.tearoff) {
@@ -103,9 +100,12 @@ export function NewQuoteClient({
 
   // clear quantities when unchecked
   React.useEffect(() => {
-    if (!selections.ridge_vent_selected) form.setValue("selections.ridge_vent_lf", undefined);
-    if (!selections.drip_edge_selected) form.setValue("selections.drip_edge_lf", undefined);
-    if (!selections.ice_water_selected) form.setValue("selections.ice_water_squares", undefined);
+    if (!selections.ridge_vent_selected)
+      form.setValue("selections.ridge_vent_lf", undefined);
+    if (!selections.drip_edge_selected)
+      form.setValue("selections.drip_edge_lf", undefined);
+    if (!selections.ice_water_selected)
+      form.setValue("selections.ice_water_squares", undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selections.ridge_vent_selected,
@@ -134,24 +134,34 @@ export function NewQuoteClient({
       },
     ];
 
-    form.setValue("selections.one_time_custom_items", next, { shouldValidate: true });
+    form.setValue("selections.one_time_custom_items", next, {
+      shouldValidate: true,
+    });
   }
 
   function updateOneTimeItem(idx: number, patch: Partial<OneTimeCustomItem>) {
     const cur = selections.one_time_custom_items ?? [];
-    const next: OneTimeCustomItem[] = cur.map((it, i) => (i === idx ? { ...it, ...patch } : it));
-
-    const normalized: OneTimeCustomItem[] = next.map((it) =>
-      it.pricing_type === "flat" ? { ...it, quantity: undefined, unit_label: "" } : it
+    const next: OneTimeCustomItem[] = cur.map((it, i) =>
+      i === idx ? { ...it, ...patch } : it
     );
 
-    form.setValue("selections.one_time_custom_items", normalized, { shouldValidate: true });
+    const normalized: OneTimeCustomItem[] = next.map((it) =>
+      it.pricing_type === "flat"
+        ? { ...it, quantity: undefined, unit_label: "" }
+        : it
+    );
+
+    form.setValue("selections.one_time_custom_items", normalized, {
+      shouldValidate: true,
+    });
   }
 
   function removeOneTimeItem(idx: number) {
     const cur = selections.one_time_custom_items ?? [];
     const next: OneTimeCustomItem[] = cur.filter((_, i) => i !== idx);
-    form.setValue("selections.one_time_custom_items", next, { shouldValidate: true });
+    form.setValue("selections.one_time_custom_items", next, {
+      shouldValidate: true,
+    });
   }
 
   async function saveQuote() {
@@ -212,7 +222,9 @@ export function NewQuoteClient({
             <Input
               value={inputs.customer_name}
               onChange={(e) =>
-                form.setValue("inputs.customer_name", e.target.value, { shouldValidate: true })
+                form.setValue("inputs.customer_name", e.target.value, {
+                  shouldValidate: true,
+                })
               }
               placeholder="Emily Carter"
             />
@@ -226,7 +238,9 @@ export function NewQuoteClient({
             <Textarea
               value={inputs.customer_address ?? ""}
               onChange={(e) =>
-                form.setValue("inputs.customer_address", e.target.value, { shouldValidate: true })
+                form.setValue("inputs.customer_address", e.target.value, {
+                  shouldValidate: true,
+                })
               }
               placeholder="456 Maple Dr"
             />
@@ -258,7 +272,9 @@ export function NewQuoteClient({
                 type="button"
                 variant={inputs.roof_size_unit === "squares" ? "secondary" : "outline"}
                 onClick={() =>
-                  form.setValue("inputs.roof_size_unit", "squares", { shouldValidate: true })
+                  form.setValue("inputs.roof_size_unit", "squares", {
+                    shouldValidate: true,
+                  })
                 }
               >
                 Squares
@@ -266,7 +282,11 @@ export function NewQuoteClient({
               <Button
                 type="button"
                 variant={inputs.roof_size_unit === "sqft" ? "secondary" : "outline"}
-                onClick={() => form.setValue("inputs.roof_size_unit", "sqft", { shouldValidate: true })}
+                onClick={() =>
+                  form.setValue("inputs.roof_size_unit", "sqft", {
+                    shouldValidate: true,
+                  })
+                }
               >
                 Sqft
               </Button>
@@ -277,7 +297,11 @@ export function NewQuoteClient({
             <div className="text-xs text-foreground/60">Pitch</div>
             <Input
               value={inputs.pitch}
-              onChange={(e) => form.setValue("inputs.pitch", e.target.value, { shouldValidate: true })}
+              onChange={(e) =>
+                form.setValue("inputs.pitch", e.target.value, {
+                  shouldValidate: true,
+                })
+              }
               placeholder="7/12"
             />
           </div>
@@ -297,7 +321,10 @@ export function NewQuoteClient({
             </div>
           ) : (
             customItems.map((it) => (
-              <div key={it.id} className="flex items-center justify-between rounded-xl border px-3 py-2">
+              <div
+                key={it.id}
+                className="flex items-center justify-between rounded-xl border px-3 py-2"
+              >
                 <div className="space-y-0.5">
                   <div className="text-sm">{it.name}</div>
                   <div className="text-xs text-foreground/60">
@@ -371,7 +398,9 @@ export function NewQuoteClient({
                     <Input
                       type="number"
                       value={it.unit_price}
-                      onChange={(e) => updateOneTimeItem(idx, { unit_price: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateOneTimeItem(idx, { unit_price: Number(e.target.value) })
+                      }
                     />
                   </div>
 
@@ -382,7 +411,9 @@ export function NewQuoteClient({
                         <Input
                           type="number"
                           value={it.quantity ?? 1}
-                          onChange={(e) => updateOneTimeItem(idx, { quantity: Number(e.target.value) })}
+                          onChange={(e) =>
+                            updateOneTimeItem(idx, { quantity: Number(e.target.value) })
+                          }
                         />
                       </div>
 
@@ -411,7 +442,9 @@ export function NewQuoteClient({
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={Boolean(it.save_to_account)}
-                        onCheckedChange={(v) => updateOneTimeItem(idx, { save_to_account: Boolean(v) })}
+                        onCheckedChange={(v) =>
+                          updateOneTimeItem(idx, { save_to_account: Boolean(v) })
+                        }
                       />
                       <span className="text-xs text-foreground/70">Save to my items</span>
                     </div>
