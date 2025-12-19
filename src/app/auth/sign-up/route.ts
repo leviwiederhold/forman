@@ -1,39 +1,27 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
   const formData = await req.formData();
-  const parsed = schema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
 
-  if (!parsed.success) {
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) {
     return NextResponse.redirect(new URL("/signup?error=invalid", req.url));
   }
 
-const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signUp({ email, password });
 
-  const { data, error } = await supabase.auth.signUp(parsed.data);
-
-if (error) {
-  return NextResponse.redirect(
-    new URL(`/signup?error=${encodeURIComponent(error.message)}`, req.url)
-  );
-}
-
-  // Profiles table will be created in Step 3. We intentionally don't insert yet.
-
-  // If email confirmations are ON, user may need to confirm before session exists.
-  if (!data.session) {
-    return NextResponse.redirect(new URL("/login?message=check-email", req.url));
+  if (error) {
+    return NextResponse.redirect(new URL("/signup?error=auth", req.url));
   }
 
   return NextResponse.redirect(new URL("/dashboard", req.url));
+}
+
+// Safety net: never 405 on GET
+export async function GET(req: NextRequest) {
+  return NextResponse.redirect(new URL("/signup", req.url));
 }
