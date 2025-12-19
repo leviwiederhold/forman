@@ -1,54 +1,30 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NextResponse, type NextRequest } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function SignupPage({
-  searchParams,
-}: {
-  searchParams: { error?: string };
-}) {
-  const error =
-    searchParams?.error === "auth"
-      ? "Could not create account."
-      : searchParams?.error === "invalid"
-      ? "Enter a valid email + password."
-      : null;
+export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const formData = await req.formData();
 
-  return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-sm space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-base font-light tracking-wide">Sign up</h1>
-          <p className="text-sm text-foreground/70">Forman Roofing v1</p>
-        </div>
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
 
-        {error ? (
-          <div className="rounded-xl border bg-card p-3 text-sm text-destructive">
-            {error}
-          </div>
-        ) : null}
+  if (!email || !password) {
+    return NextResponse.redirect(new URL("/signup?error=invalid", req.url));
+  }
 
-        <form action="/auth/sign-up" method="post" className="space-y-3">
-          <Input name="email" type="email" placeholder="Email" required />
-          <Input
-            name="password"
-            type="password"
-            placeholder="Password (min 6 chars)"
-            required
-            minLength={6}
-          />
-          <Button type="submit" className="w-full">
-            Create account
-          </Button>
-        </form>
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-        <p className="text-sm text-foreground/70">
-          Already have an account?{" "}
-          <Link className="text-foreground underline underline-offset-4" href="/login">
-            Log in
-          </Link>
-        </p>
-      </div>
-    </main>
-  );
+  if (error) {
+    return NextResponse.redirect(new URL("/signup?error=auth", req.url));
+  }
+
+  return NextResponse.redirect(new URL("/dashboard", req.url));
+}
+
+// SAFETY NET — prevents 405 forever
+export async function GET(req: NextRequest) {
+  return NextResponse.redirect(new URL("/signup", req.url));
 }
