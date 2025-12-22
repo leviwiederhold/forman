@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/quotes", label: "Quotes" },
   { href: "/quotes/new", label: "New Quote" },
   { href: "/settings/roofing", label: "Settings" },
 ];
+
 
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";

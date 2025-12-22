@@ -1,44 +1,34 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
 
-export default async function PublicQuotePage({
-  params,
-}: {
-  params: { id: string };
-}) {
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default async function QuoteSharePage({ params }: PageProps) {
+  const { id } = await params;
+
   const supabase = await createSupabaseServerClient();
 
   const { data: quote } = await supabase
     .from("quotes")
-    .select("customer_name, pricing, created_at")
-    .eq("id", params.id)
+    .select("*")
+    .eq("id", id)
     .single();
 
   if (!quote) {
-    return <div className="p-8">Quote not found</div>;
+    notFound();
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-8">
-      <h1 className="text-2xl font-semibold">Estimate</h1>
+    <div className="mx-auto max-w-3xl space-y-4 p-6">
+      <h1 className="text-xl font-semibold">Quote Preview</h1>
 
-      <div className="text-sm text-muted-foreground">
-        {quote.customer_name} ·{" "}
-        {new Date(quote.created_at).toLocaleDateString()}
-      </div>
-
-      <div className="rounded-xl border p-4">
-        {quote.pricing.line_items.map((it: any, i: number) => (
-          <div key={i} className="flex justify-between py-1">
-            <span>{it.name}</span>
-            <span>${it.subtotal.toFixed(2)}</span>
-          </div>
-        ))}
-
-        <div className="mt-3 flex justify-between font-semibold">
-          <span>Total</span>
-          <span>${quote.pricing.total.toFixed(2)}</span>
-        </div>
-      </div>
+      <pre className="rounded-xl border bg-card p-4 text-sm overflow-x-auto">
+        {JSON.stringify(quote, null, 2)}
+      </pre>
     </div>
   );
 }
