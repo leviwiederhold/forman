@@ -1,45 +1,55 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ShareLinkButton } from "@/components/quotes/ShareLinkButton";
 
-export default function QuoteActions({ quoteId }: { quoteId: string }) {
-  async function copyLink() {
-    const url = `${window.location.origin}/quotes/${quoteId}/share`;
-    await navigator.clipboard.writeText(url);
-    alert("Share link copied");
-  }
-
-  async function emailQuote() {
-    const email = prompt("Enter customer email:");
-    if (!email) return;
-
-    const res = await fetch(`/api/quotes/${quoteId}/email`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-
-    if (!res.ok) {
-      alert("Failed to send email");
-      return;
-    }
-
-    alert("Email sent");
-  }
-
-  function downloadPDF() {
-    window.open(`/api/quotes/${quoteId}/pdf`, "_blank");
-  }
+export default function QuoteActions({
+  quoteId,
+  status,
+  customerName,
+}: {
+  quoteId: string;
+  status: string | null;
+  customerName?: string | null;
+}) {
+  const isFinal = status === "accepted" || status === "rejected";
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={downloadPDF}>
-        Download PDF
-      </Button>
-      <Button variant="outline" onClick={copyLink}>
-        Copy Link
-      </Button>
-      <Button onClick={emailQuote}>Email</Button>
+    <div className="flex flex-wrap gap-2">
+      {/* EDIT (disabled if final) */}
+      {!isFinal ? (
+        <Link href={`/quotes/${quoteId}/edit`}>
+          <Button variant="outline">Edit</Button>
+        </Link>
+      ) : (
+        <Button variant="outline" disabled title="Duplicate to revise">
+          Edit
+        </Button>
+      )}
+
+      {/* DUPLICATE (always allowed) */}
+      <Link href={`/api/quotes/${quoteId}/duplicate`}>
+        <Button variant="outline">Duplicate</Button>
+      </Link>
+
+      {/* PDF */}
+      <a href={`/api/quotes/${quoteId}/pdf`}>
+        <Button variant="outline">Download PDF</Button>
+      </a>
+
+      {/* ✅ CORRECT SHARE LINK */}
+      <ShareLinkButton quoteId={quoteId} />
+
+      {/* EMAIL (simple v1) */}
+      <a
+        href={`mailto:?subject=Roofing Quote&body=Here is your quote for ${
+          customerName || "your project"
+        }.`}
+      >
+        <Button variant="outline">Email</Button>
+      </a>
     </div>
   );
 }

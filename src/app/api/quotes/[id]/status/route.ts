@@ -3,10 +3,10 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const BodySchema = z.object({
-  email: z.string().email(),
+  status: z.enum(["draft", "sent", "accepted", "rejected"]),
 });
 
-export async function POST(
+export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -25,22 +25,20 @@ export async function POST(
 
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  // Confirm quote exists + belongs to user (RLS also protects)
-  const { data: quote } = await supabase
+  const { error } = await supabase
     .from("quotes")
-    .select("id")
-    .eq("id", id)
-    .single();
+    .update({ status: parsed.data.status })
+    .eq("id", id);
 
-  if (!quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  if (error) {
+    return NextResponse.json(
+      { error: "Failed to update status", supabase: { message: error.message, code: (error as any).code } },
+      { status: 500 }
+    );
+  }
 
-  // Stub: later you'll integrate Resend / Postmark / SendGrid
-  // For now, return success so UI flow works.
-  return NextResponse.json(
-    { ok: true, message: "Email sending not implemented yet.", to: parsed.data.email },
-    { status: 200 }
-  );
+  return NextResponse.json({ ok: true }, { status: 200 });
 }

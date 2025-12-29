@@ -35,9 +35,13 @@ function safeMessage(err: unknown) {
 export function NewQuoteClient({
   rates,
   customItems,
+  editId,
+  initialPayload,
 }: {
   rates: RoofingRateCard;
   customItems: SavedCustomItem[];
+  editId?: string;
+  initialPayload?: RoofingNewQuote;
 }) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
@@ -48,31 +52,33 @@ export function NewQuoteClient({
   const form = useForm<RoofingNewQuote>({
     resolver,
     mode: "onChange",
-    defaultValues: {
-      inputs: {
-        customer_name: "",
-        customer_address: "",
-        roof_size_value: 24,
-        roof_size_unit: "squares",
-        pitch: "7/12",
-        stories: 2,
-        tearoff: true,
-        layers: 1,
-      },
-      selections: {
-        ridge_vent_selected: false,
-        ridge_vent_lf: undefined,
-        drip_edge_selected: false,
-        drip_edge_lf: undefined,
-        ice_water_selected: false,
-        ice_water_squares: undefined,
-        steep_charge_selected: false,
-        permit_fee_selected: false,
-        tearoff_selected: true,
-        selected_saved_custom_item_ids: [],
-        one_time_custom_items: [],
-      },
-    },
+    defaultValues:
+      initialPayload ??
+      ({
+        inputs: {
+          customer_name: "",
+          customer_address: "",
+          roof_size_value: 24,
+          roof_size_unit: "squares",
+          pitch: "7/12",
+          stories: 2,
+          tearoff: true,
+          layers: 1,
+        },
+        selections: {
+          ridge_vent_selected: false,
+          ridge_vent_lf: undefined,
+          drip_edge_selected: false,
+          drip_edge_lf: undefined,
+          ice_water_selected: false,
+          ice_water_squares: undefined,
+          steep_charge_selected: false,
+          permit_fee_selected: false,
+          tearoff_selected: true,
+          selected_saved_custom_item_ids: [],
+          one_time_custom_items: [],
+        },
+      } as RoofingNewQuote),
   });
 
   const inputs = form.watch("inputs");
@@ -178,8 +184,11 @@ export function NewQuoteClient({
     }
 
     try {
-      const res = await fetch("/api/quotes", {
-        method: "POST",
+      const url = editId ? `/api/quotes/${editId}` : "/api/quotes";
+      const method = editId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(valid.data),
       });
@@ -197,9 +206,10 @@ export function NewQuoteClient({
         return;
       }
 
-      const quoteId =
-        typeof json === "object" && json !== null && "quote_id" in json
-          ? String((json as { quote_id?: unknown }).quote_id)
+      const quoteId = editId
+        ? editId
+        : typeof json === "object" && json !== null && "quote_id" in json
+          ? String((json as { quote_id?: unknown }).quote_id ?? "")
           : "";
 
       window.location.href = `/quotes/${quoteId}`;
@@ -350,7 +360,7 @@ export function NewQuoteClient({
           </Button>
 
           <Button type="button" onClick={saveQuote} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Quote"}
+            {isSaving ? "Saving..." : editId ? "Save Changes" : "Save Quote"}
           </Button>
         </div>
 
@@ -465,7 +475,9 @@ export function NewQuoteClient({
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-sm text-foreground/80">Estimate preview</div>
-            <div className="text-xs text-foreground/60">Live totals (server recalculates on save)</div>
+            <div className="text-xs text-foreground/60">
+              Live totals (server recalculates on save)
+            </div>
           </div>
           <div className="text-xs text-foreground/60">
             Squares: {toSquares(inputs.roof_size_value, inputs.roof_size_unit).toFixed(2)}

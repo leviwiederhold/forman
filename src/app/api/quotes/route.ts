@@ -1,25 +1,16 @@
-// src/app/api/quotes/route.ts
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RoofingNewQuoteSchema } from "@/trades/roofing/schema";
 import { calculateRoofingQuote } from "@/trades/roofing/pricing";
-import { DEFAULT_ROOFING_RATE_CARD } from "@/trades/roofing/defaultRateCard";
+import { loadRoofingRateCardForUser, isZeroRateCard } from "@/trades/roofing/rates.server";
 
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
 
-  const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
+  const body: unknown = await req.json().catch(() => null);
   const parsed = RoofingNewQuoteSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -28,45 +19,38 @@ export async function POST(req: Request) {
     );
   }
 
-  const args = parsed.data;
-
-  let pricing: ReturnType<typeof calculateRoofingQuote>;
-  try {
-    pricing = calculateRoofingQuote({
-      args,
-      rateCard: DEFAULT_ROOFING_RATE_CARD,
-      savedCustomItems: [],
-    });
-  } catch (e: any) {
+  const rateCard = await loadRoofingRateCardForUser(supabase as any, auth.user.id);
+  if (isZeroRateCard(rateCard)) {
     return NextResponse.json(
-      {
-        error: "Pricing calculation failed",
-        message: e?.message ?? String(e),
-        where: "calculateRoofingQuote",
-      },
-      { status: 500 }
+      { error: "Roofing rates are all zeros. Fix Settings → Roofing." },
+      { status: 400 }
     );
   }
 
-  // RoofingPricingResult doesn't have `tax` yet
+  const args = parsed.data;
+
+  const pricing = calculateRoofingQuote({
+    args,
+    rateCard: rateCard as any,
+    savedCustomItems: [],
+  });
+
   const subtotal =
     typeof (pricing as any).subtotal === "number"
       ? (pricing as any).subtotal
       : typeof (pricing as any).total === "number"
-        ? (pricing as any).total
-        : 0;
+      ? (pricing as any).total
+      : 0;
 
   const tax = 0;
-
-  const total =
-    typeof (pricing as any).total === "number" ? (pricing as any).total : subtotal + tax;
-
-  const lineItems =
-    Array.isArray((pricing as any).line_items) ? (pricing as any).line_items : [];
+  const total = typeof (pricing as any).total === "number" ? (pricing as any).total : subtotal;
+  const lineItems = Array.isArray((pricing as any).line_items) ? (pricing as any).line_items : [];
 
   const insertPayload = {
     user_id: auth.user.id,
     trade: "roofing",
+    status: "draft",
+    locked: false,
 
     customer_name: (args.inputs?.customer_name ?? "").trim() || "",
     customer_address: args.inputs?.customer_address ?? null,
@@ -81,30 +65,20 @@ export async function POST(req: Request) {
     subtotal,
     tax,
     total,
-
-    locked: false,
   };
 
   const { data, error } = await supabase
     .from("quotes")
     .insert(insertPayload)
-    .select("id, created_at")
+    .select("id")
     .single();
 
-  if (error) {
+  if (error || !data) {
     return NextResponse.json(
-      {
-        error: "Failed to save quote",
-        supabase: {
-          message: error.message,
-          details: (error as any).details,
-          hint: (error as any).hint,
-          code: (error as any).code,
-        },
-      },
+      { error: "Failed to save quote", supabase: { message: error?.message, code: (error as any)?.code } },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ ok: true, quote: data }, { status: 201 });
+  return NextResponse.json({ ok: true, quote_id: data.id }, { status: 201 });
 }
