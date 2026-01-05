@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+type SupabaseLikeError = {
+  code?: string;
+  message?: string;
+  details?: string | null;
+};
+
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,7 +50,8 @@ export async function POST(
 
     status: "draft",
     locked: false,
-    // user_id is filled by us explicitly to be safe (even though RLS insert policy checks it)
+
+    // explicitly set for safety
     user_id: auth.user.id,
   };
 
@@ -55,13 +62,15 @@ export async function POST(
     .single();
 
   if (insertErr || !created) {
+    const e = insertErr as unknown as SupabaseLikeError;
+
     return NextResponse.json(
       {
         error: "Failed to duplicate quote",
         supabase: {
-          message: insertErr?.message,
-          code: (insertErr as any)?.code,
-          details: (insertErr as any)?.details,
+          code: e.code,
+          message: e.message,
+          details: e.details ?? null,
         },
       },
       { status: 500 }

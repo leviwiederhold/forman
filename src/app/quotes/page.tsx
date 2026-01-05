@@ -2,15 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import QuotesListClient from "./quotes-list-client";
 
 type QuoteRow = {
   id: string;
   trade: string | null;
   created_at: string;
-  inputs_json: unknown;
-  pricing_json: unknown;
+  customer_name: string | null;
+  status: string | null;
+  total: number | null;
 };
 
 export default async function QuotesPage() {
@@ -21,7 +21,7 @@ export default async function QuotesPage() {
 
   const { data: quotes } = await supabase
     .from("quotes")
-    .select("id, trade, created_at, inputs_json, pricing_json")
+    .select("id, trade, created_at, customer_name, status, total")
     .order("created_at", { ascending: false })
     .limit(200);
 

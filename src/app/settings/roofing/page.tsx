@@ -1,3 +1,4 @@
+// src/app/settings/roofing/page.tsx
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RoofingSettingsForm } from "./roofing-settings-form";
@@ -23,18 +24,43 @@ export default async function RoofingSettingsPage() {
 
   return (
     <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-base font-light tracking-wide">Settings</h1>
-          <p className="text-sm text-foreground/70">Roofing rate card</p>
-        </div>
+      <div className="mx-auto max-w-4xl space-y-8">
+        {/* Page header */}
+        <header className="space-y-2">
+          <div className="text-xs uppercase tracking-wider text-foreground/60">
+            Settings
+          </div>
+          <h1 className="text-xl font-light">Roofing pricing</h1>
+          <p className="text-sm text-foreground/70">
+            These prices are used to calculate new roofing quotes. You can still add custom items per quote.
+          </p>
+        </header>
 
-       <RoofingSettingsForm initialRates={initialRates} />
+        {/* Step 1 */}
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium">1) Pricing</div>
+              <div className="text-xs text-foreground/60">
+                Set your core costs, add-ons, fees, and markup.
+              </div>
+            </div>
+          </div>
 
-<div className="h-6" />
+          <RoofingSettingsForm initialRates={initialRates} />
+        </section>
 
-<MyItems trade="roofing" />
+        {/* Step 2 */}
+        <section className="space-y-3">
+          <div>
+            <div className="text-sm font-medium">2) Saved items</div>
+            <div className="text-xs text-foreground/60">
+              Extras you can include on quotes (never added automatically).
+            </div>
+          </div>
 
+          <MyItems trade="roofing" />
+        </section>
       </div>
     </main>
   );

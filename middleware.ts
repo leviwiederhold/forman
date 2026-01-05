@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+type CookieOptions = { [key: string]: unknown };
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
@@ -12,33 +14,32 @@ export async function middleware(req: NextRequest) {
         get(name: string) {
           return req.cookies.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
-          res.cookies.set({ name, value, ...options });
+        set(name: string, value: string, options: CookieOptions) {
+          res.cookies.set({ name, value, ...(options as Record<string, unknown>) });
         },
-        remove(name: string, options: any) {
-          res.cookies.set({ name, value: "", ...options });
+        remove(name: string, options: CookieOptions) {
+          res.cookies.set({ name, value: "", ...(options as Record<string, unknown>) });
         },
       },
     }
   );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
 
   const pathname = req.nextUrl.pathname;
 
-  // ✅ PUBLIC ROUTES (NO AUTH)
-  const isPublic =
+    const isPublic =
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/quotes/share/") ||
     pathname.startsWith("/feedback") ||
-    pathname.startsWith("/api/feedback");
+    pathname.startsWith("/api/feedback") ||
+    pathname.startsWith("/api/quotes/share/");
+
 
   if (isPublic) return res;
 
-  // 🔒 PROTECT EVERYTHING ELSE
   if (!session) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -50,7 +51,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

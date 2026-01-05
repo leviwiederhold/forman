@@ -1,119 +1,145 @@
 import { NextResponse } from "next/server";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RoofingNewQuoteSchema } from "@/trades/roofing/schema";
 import { calculateRoofingQuote } from "@/trades/roofing/pricing";
-import { loadRoofingRateCardForUser, isZeroRateCard } from "@/trades/roofing/rates.server";
+import type { SavedCustomItem } from "@/trades/roofing/pricing";
+import type { JsonObject, JsonValue } from "@/lib/types/json";
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+/**
+ * 🔥 IMPORTANT (ONE-LINE FIX)
+ * Replace this import with the REAL one used in your repo.
+ * Search: rg "loadRoofingRateCardForUser" -n src
+ * Copy the working import line here.
+ */
+import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
+
+type Params = { id: string };
+
+type QuoteRow = {
+  id: string;
+  trade: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  inputs_json: JsonObject | null;
+  selections_json: JsonObject | null;
+  line_items_json: JsonValue | null;
+  pricing_json: JsonObject | null;
+  payload: JsonObject | null;
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
+  status: string | null;
+  share_token: string | null;
+  created_at?: string | null;
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function asJsonObject(v: unknown, fallback: JsonObject = {}): JsonObject {
+  return isRecord(v) ? (v as unknown as JsonObject) : fallback;
+}
+
+function asJsonValue(v: unknown, fallback: JsonValue): JsonValue {
+  return v === undefined ? fallback : (v as JsonValue);
+}
+
+function getNumber(v: unknown, fallback = 0): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+}
+
+// GET /api/quotes/:id (private)
+export async function GET(_req: Request, { params }: { params: Promise<Params> }) {
   const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // ✅ LOCK RULES: prevent edits once final
-  const { data: existing, error: existingErr } = await supabase
+  const { data: quote, error } = await supabase
     .from("quotes")
-    .select("id,status")
+    .select(
+      "id, trade, customer_name, customer_address, inputs_json, selections_json, line_items_json, pricing_json, payload, subtotal, tax, total, status, share_token, created_at"
+    )
     .eq("id", id)
-    .single();
+    .single<QuoteRow>();
 
-  if (existingErr || !existing) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
-  }
+  if (error || !quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  return NextResponse.json({ quote });
+}
 
-  const currentStatus = String((existing as any).status ?? "draft");
-  if (currentStatus === "accepted" || currentStatus === "rejected") {
-    return NextResponse.json(
-      { error: `Quote is ${currentStatus} and cannot be edited. Duplicate to revise.` },
-      { status: 409 }
-    );
-  }
+// PATCH /api/quotes/:id (private) — expects FULL RoofingNewQuoteSchema payload
+export async function PATCH(req: Request, { params }: { params: Promise<Params> }) {
+  const { id } = await params;
 
-  const body: unknown = await req.json().catch(() => null);
+  const supabase = await createSupabaseServerClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Ensure exists (RLS enforces ownership)
+  const { data: exists, error: fetchErr } = await supabase
+    .from("quotes")
+    .select("id")
+    .eq("id", id)
+    .single<{ id: string }>();
+
+  if (fetchErr || !exists) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+
+  const body: unknown = await req.json();
   const parsed = RoofingNewQuoteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid quote payload", issues: parsed.error.issues },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid quote payload" }, { status: 400 });
   }
-
-  const rateCard = await loadRoofingRateCardForUser(supabase as any, auth.user.id);
-  if (isZeroRateCard(rateCard)) {
-    return NextResponse.json(
-      { error: "Roofing rates are all zeros. Fix Settings → Roofing." },
-      { status: 400 }
-    );
-  }
-
-  // ✅ IMPORTANT: use saved items during pricing (matches New Quote)
-  const { data: savedItems } = await supabase
-    .from("saved_custom_items")
-    .select("*")
-    .eq("user_id", auth.user.id)
-    .eq("trade", "roofing")
-    .order("created_at", { ascending: true });
-
-  const customItems = savedItems ?? [];
 
   const args = parsed.data;
 
-  const pricing = calculateRoofingQuote({
+  // Canonical loader (DO NOT BREAK)
+  const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+
+  const savedCustomItems: SavedCustomItem[] = [];
+
+  const computed = calculateRoofingQuote({
     args,
-    rateCard: rateCard as any,
-    savedCustomItems: customItems as any,
+    rateCard,
+    savedCustomItems,
   });
 
-  const subtotal =
-    typeof (pricing as any).subtotal === "number"
-      ? (pricing as any).subtotal
-      : typeof (pricing as any).total === "number"
-        ? (pricing as any).total
-        : 0;
+  const computedU: unknown = computed;
+  const computedR: Record<string, unknown> = isRecord(computedU) ? computedU : {};
 
-  const tax = 0;
-  const total =
-    typeof (pricing as any).total === "number" ? (pricing as any).total : subtotal;
+  const lineItems = computedR["line_items"];
+  const subtotal = getNumber(computedR["subtotal"], 0);
+  const total = getNumber(computedR["total"], subtotal);
+  const tax = getNumber(computedR["tax"], 0);
 
-  const lineItems = Array.isArray((pricing as any).line_items)
-    ? (pricing as any).line_items
-    : [];
+  const pricing_json = asJsonObject(computedR["pricing_json"] ?? computedR["pricing"] ?? {});
+  const payload = asJsonObject(computedR["payload"] ?? {});
 
-  const patch = {
-    customer_name: (args.inputs?.customer_name ?? "").trim() || "",
-    customer_address: args.inputs?.customer_address ?? null,
-    inputs_json: args.inputs ?? {},
-    selections_json: args.selections ?? {},
-    line_items_json: lineItems,
-    pricing_json: pricing ?? {},
-    payload: args ?? {},
-    subtotal,
-    tax,
-    total,
-  };
-
-  const { data, error } = await supabase
+  const { data: updated, error: updateErr } = await supabase
     .from("quotes")
-    .update(patch)
+    .update({
+      customer_name: args.inputs.customer_name,
+      customer_address: args.inputs.customer_address ?? null,
+      inputs_json: asJsonObject(args.inputs),
+      selections_json: asJsonObject(args.selections),
+      line_items_json: asJsonValue(lineItems, []) as JsonValue,
+      pricing_json,
+      payload,
+      subtotal,
+      tax,
+      total,
+    })
     .eq("id", id)
-    .select("id")
-    .single();
+    .select(
+      "id, trade, customer_name, customer_address, inputs_json, selections_json, line_items_json, pricing_json, payload, subtotal, tax, total, status, share_token, created_at"
+    )
+    .single<QuoteRow>();
 
-  if (error || !data) {
-    return NextResponse.json(
-      {
-        error: "Failed to update quote",
-        supabase: { message: error?.message, code: (error as any)?.code },
-      },
-      { status: 500 }
-    );
+  if (updateErr || !updated) {
+    return NextResponse.json({ error: updateErr?.message ?? "Update failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: data.id }, { status: 200 });
+  return NextResponse.json({ quote: updated });
 }

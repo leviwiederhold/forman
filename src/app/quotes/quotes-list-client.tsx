@@ -8,20 +8,13 @@ type QuoteRow = {
   id: string;
   trade: string | null;
   created_at: string;
-  inputs_json: unknown;
-  pricing_json: unknown;
+  customer_name: string | null;
+  status: string | null;
+  total: number | null;
 };
 
-function getCustomerName(inputs: unknown): string {
-  if (!inputs || typeof inputs !== "object") return "Customer";
-  const v = (inputs as { customer_name?: unknown }).customer_name;
-  return typeof v === "string" && v.trim().length > 0 ? v : "Customer";
-}
-
-function getTotal(pricing: unknown): number | null {
-  if (!pricing || typeof pricing !== "object") return null;
-  const v = (pricing as { total?: unknown }).total;
-  return typeof v === "number" ? v : null;
+function getCustomerName(name: string | null): string {
+  return name && name.trim().length > 0 ? name : "Customer";
 }
 
 function fmtMoney(n: number | null) {
@@ -39,18 +32,14 @@ function fmtDate(iso: string) {
   });
 }
 
-export default function QuotesListClient({
-  initialQuotes,
-}: {
-  initialQuotes: QuoteRow[];
-}) {
+export default function QuotesListClient({ initialQuotes }: { initialQuotes: QuoteRow[] }) {
   const [q, setQ] = React.useState("");
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return initialQuotes;
     return initialQuotes.filter((row) =>
-      getCustomerName(row.inputs_json).toLowerCase().includes(term)
+      getCustomerName(row.customer_name).toLowerCase().includes(term)
     );
   }, [q, initialQuotes]);
 
@@ -76,8 +65,9 @@ export default function QuotesListClient({
         <div className="rounded-2xl border bg-card">
           <div className="divide-y">
             {filtered.map((row) => {
-              const customer = getCustomerName(row.inputs_json);
-              const total = getTotal(row.pricing_json);
+              const customer = getCustomerName(row.customer_name);
+              const total = row.total ?? null;
+
               return (
                 <Link
                   key={row.id}
@@ -86,16 +76,12 @@ export default function QuotesListClient({
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <div className="truncate text-sm text-foreground/85">
-                        {customer}
-                      </div>
+                      <div className="truncate text-sm text-foreground/85">{customer}</div>
                       <div className="mt-0.5 text-xs text-foreground/60">
-                        {row.trade ?? "roofing"} · {fmtDate(row.created_at)}
+                        {(row.trade ?? "roofing")} · {(row.status ?? "draft")} · {fmtDate(row.created_at)}
                       </div>
                     </div>
-                    <div className="text-sm text-foreground/85">
-                      {fmtMoney(total)}
-                    </div>
+                    <div className="text-sm text-foreground/85">{fmtMoney(total)}</div>
                   </div>
                 </Link>
               );

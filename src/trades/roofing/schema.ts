@@ -13,17 +13,12 @@ export const RoofingRateCardSchema = z.object({
   minimum_job_price: z.number().min(0),
   markup_percent: z.number().min(0).max(500),
 
+  // Common add-ons (priced, but NOT "default selected")
   ridge_vent_per_lf: z.number().min(0),
   drip_edge_per_lf: z.number().min(0),
   ice_water_per_square: z.number().min(0),
   steep_charge_flat: z.number().min(0),
   permit_fee_flat: z.number().min(0),
-
-  ridge_vent_default_selected: z.boolean(),
-  drip_edge_default_selected: z.boolean(),
-  ice_water_default_selected: z.boolean(),
-  steep_charge_default_selected: z.boolean(),
-  permit_fee_default_selected: z.boolean(),
 });
 
 export type RoofingRateCard = z.infer<typeof RoofingRateCardSchema>;
@@ -42,12 +37,6 @@ export const ROOFING_RATE_DEFAULTS: RoofingRateCard = {
   ice_water_per_square: 45,
   steep_charge_flat: 450,
   permit_fee_flat: 250,
-
-  ridge_vent_default_selected: false,
-  drip_edge_default_selected: false,
-  ice_water_default_selected: false,
-  steep_charge_default_selected: false,
-  permit_fee_default_selected: false,
 };
 
 // -----------------------------
@@ -150,7 +139,7 @@ export const OneTimeCustomItemSchema = z
 
 export const RoofingQuoteSelectionsSchema = z
   .object({
-    // Optional items
+    // Common add-ons selections (not defaults)
     ridge_vent_selected: z.boolean(),
     ridge_vent_lf: z.number().optional(),
 
@@ -185,10 +174,7 @@ export const RoofingQuoteSelectionsSchema = z
         path: ["drip_edge_lf"],
       });
     }
-    if (
-      val.ice_water_selected &&
-      (!val.ice_water_squares || val.ice_water_squares <= 0)
-    ) {
+    if (val.ice_water_selected && (!val.ice_water_squares || val.ice_water_squares <= 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Squares required",

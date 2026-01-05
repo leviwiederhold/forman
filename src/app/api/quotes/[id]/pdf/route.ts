@@ -2,9 +2,26 @@ import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+type LineItem = {
+  name?: unknown;
+  label?: unknown;
+  quantity?: unknown;
+  qty?: unknown;
+  unit?: unknown;
+  subtotal?: unknown;
+  total?: unknown;
+  amount?: unknown;
+  line_total?: unknown;
+  extended_price?: unknown;
+};
+
 function money(n: unknown) {
   const v = Number(n ?? 0);
   return `$${(Number.isFinite(v) ? v : 0).toFixed(2)}`;
+}
+
+function asLineItem(v: unknown): LineItem {
+  return typeof v === "object" && v !== null ? (v as LineItem) : {};
 }
 
 export async function GET(
@@ -15,9 +32,7 @@ export async function GET(
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: quote, error } = await supabase
     .from("quotes")
@@ -31,10 +46,10 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const items = Array.isArray(quote.line_items_json) ? quote.line_items_json : [];
+  const itemsRaw: unknown[] = Array.isArray(quote.line_items_json) ? quote.line_items_json : [];
 
   const pdf = await PDFDocument.create();
-  const page = pdf.addPage([612, 792]); // US Letter
+  const page = pdf.addPage([612, 792]); // Letter
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
@@ -46,43 +61,37 @@ export async function GET(
     y -= size + 6;
   };
 
-  // Header
   drawLine("Forman Roofing Quote", 18, true);
   drawLine(`Quote ID: ${quote.id}`, 10);
   drawLine(`Date: ${new Date(quote.created_at).toLocaleString()}`, 10);
   drawLine(`Status: ${String(quote.status ?? "draft")}`, 10);
 
   y -= 10;
-
-  // Customer
   drawLine(`Customer: ${quote.customer_name || "Customer"}`, 12, true);
-  if (quote.customer_address) drawLine(`Address: ${quote.customer_address}`, 10);
+  if (quote.customer_address) drawLine(`Address: ${String(quote.customer_address)}`, 10);
 
   y -= 14;
-
-  // Line items header
   drawLine("Line Items", 12, true);
 
-  // Table header
   page.drawText("Item", { x: left, y, size: 10, font: fontBold });
   page.drawText("Qty", { x: 360, y, size: 10, font: fontBold });
   page.drawText("Amount", { x: 470, y, size: 10, font: fontBold });
   y -= 14;
 
-  // Items (single page v1)
-  for (const it of items) {
-    if (y < 130) break; // v1: stop before bottom
+  for (const raw of itemsRaw) {
+    if (y < 130) break;
 
-    const name = String((it as any)?.name ?? (it as any)?.label ?? "Item");
-    const qty = (it as any)?.quantity ?? (it as any)?.qty ?? "";
-    const unit = (it as any)?.unit ?? "";
+    const it = asLineItem(raw);
+    const name = String(it.name ?? it.label ?? "Item");
+
+    const qtyVal = it.quantity ?? it.qty;
+    const qty =
+      typeof qtyVal === "number" || typeof qtyVal === "string" ? String(qtyVal) : "";
+
+    const unit = typeof it.unit === "string" ? it.unit : String(it.unit ?? "");
+
     const amount =
-      (it as any)?.subtotal ??
-      (it as any)?.total ??
-      (it as any)?.amount ??
-      (it as any)?.line_total ??
-      (it as any)?.extended_price ??
-      0;
+      it.subtotal ?? it.total ?? it.amount ?? it.line_total ?? it.extended_price ?? 0;
 
     page.drawText(name.slice(0, 48), { x: left, y, size: 10, font });
     page.drawText(`${qty} ${unit}`.trim(), { x: 360, y, size: 10, font });
@@ -91,17 +100,13 @@ export async function GET(
   }
 
   y -= 10;
-
-  // Totals
   page.drawText(`Subtotal: ${money(quote.subtotal)}`, { x: 360, y, size: 10, font });
   y -= 14;
   page.drawText(`Tax: ${money(quote.tax)}`, { x: 360, y, size: 10, font });
   y -= 14;
   page.drawText(`Total: ${money(quote.total)}`, { x: 360, y, size: 12, font: fontBold });
 
-  const bytes = await pdf.save(); // Uint8Array
-
-  // ✅ Fix: convert to Buffer (BodyInit-compatible)
+  const bytes = await pdf.save();
   const body = Buffer.from(bytes);
 
   return new NextResponse(body, {

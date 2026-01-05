@@ -1,10 +1,33 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { CreateCustomItemSchema } from "@/trades/roofing/schema";
 
 const TradeQuerySchema = z.object({
   trade: z.string().min(1),
+});
+
+/**
+ * Settings UI sends:
+ * {
+ *   trade: "roofing",
+ *   item: {
+ *     name,
+ *     pricing_type,
+ *     unit_label,
+ *     unit_price,
+ *     taxable
+ *   }
+ * }
+ */
+const CreateItemSchema = z.object({
+  trade: z.string().optional().default("roofing"),
+  item: z.object({
+    name: z.string().min(1),
+    pricing_type: z.string().min(1),
+    unit_label: z.string().optional().nullable(),
+    unit_price: z.coerce.number().min(0),
+    taxable: z.coerce.boolean().default(false),
+  }),
 });
 
 export async function GET(req: Request) {
@@ -18,7 +41,9 @@ export async function GET(req: Request) {
     trade: url.searchParams.get("trade") ?? "roofing",
   });
 
-  if (!parsed.success) return NextResponse.json({ error: "invalid_trade" }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "invalid_trade" }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from("custom_items")
@@ -30,7 +55,9 @@ export async function GET(req: Request) {
     .order("is_active", { ascending: false })
     .order("updated_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: "db_error", detail: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ items: data ?? [] });
 }
@@ -42,7 +69,7 @@ export async function POST(req: Request) {
   if (!auth.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body: unknown = await req.json();
-  const parsed = CreateCustomItemSchema.safeParse(body);
+  const parsed = CreateItemSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -53,24 +80,35 @@ export async function POST(req: Request) {
 
   const payload = parsed.data;
 
+  // Normalize to canonical enum used across the app (schema.ts)
+  const rawType = payload.item.pricing_type.trim().toLowerCase();
+  const pricing_type: "flat" | "per_unit" = rawType === "flat" ? "flat" : "per_unit";
+
+  // Flat disables unit label in UI, so force a safe value
+  const unit_label =
+    pricing_type === "flat" ? "Flat" : payload.item.unit_label?.trim() || "Unit";
+
   const { data, error } = await supabase
     .from("custom_items")
     .insert({
-  user_id: auth.user.id,
-  trade: "roofing",
-  name: payload.name,
-  pricing_type: payload.pricing_type,
-  unit_label: payload.unit_label ?? null,
-  unit_price: payload.unit_price,
-  taxable: payload.taxable,
-  is_active: true,
-})
-
+      user_id: auth.user.id,
+      trade: payload.trade,
+      name: payload.item.name.trim(),
+      pricing_type,
+      unit_label,
+      unit_price: payload.item.unit_price,
+      taxable: payload.item.taxable,
+      is_active: true,
+    })
     .select("id")
-    .single();
+    .single<{ id: string }>();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json(
+      { error: "insert_failed", detail: error?.message ?? "unknown" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ id: data.id });
 }
-

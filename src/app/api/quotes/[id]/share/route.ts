@@ -1,54 +1,48 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function originFromReq(req: Request) {
-  const u = new URL(req.url);
-  return u.origin;
+function randomToken(len = 22): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+  let out = "";
+  for (let i = 0; i < len; i += 1) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+// POST /api/quotes/:id/share
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!auth.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // Fetch existing token (RLS ensures ownership)
+  // Read existing token (RLS ensures it's theirs)
   const { data: existing, error: readErr } = await supabase
     .from("quotes")
     .select("id, share_token")
     .eq("id", id)
-    .single();
+    .single<{ id: string; share_token: string | null }>();
 
   if (readErr || !existing) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+    return NextResponse.json({ error: "quote_not_found" }, { status: 404 });
   }
 
-  let token = (existing as any).share_token as string | null;
+  let token = existing.share_token;
 
-  // If missing, create one
   if (!token) {
-    const { data: updated, error: upErr } = await supabase
+    token = randomToken();
+
+    const { error: upErr } = await supabase
       .from("quotes")
-      .update({ share_token: crypto.randomUUID() })
-      .eq("id", id)
-      .select("share_token")
-      .single();
+      .update({ share_token: token })
+      .eq("id", id);
 
-    if (upErr || !updated) {
-      return NextResponse.json({ error: "Failed to create share link" }, { status: 500 });
-    }
-
-    token = (updated as any).share_token as string;
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
 
-  const origin = originFromReq(req);
-  const share_url = `${origin}/quotes/share/${token}`;
-
-  return NextResponse.json({ ok: true, share_token: token, share_url });
+  // Client will build absolute URL; still return helpful pieces
+  return NextResponse.json({
+    token,
+    url: `/quotes/share/${token}`,
+  });
 }

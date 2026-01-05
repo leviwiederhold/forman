@@ -1,82 +1,66 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import {
-  loadRoofingRateCardForUser,
-  isZeroRateCard,
-} from "@/trades/roofing/rates.server";
-
 import { NewQuoteClient } from "@/app/quotes/new/quote-new-client";
+import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
+import { RoofingNewQuoteSchema, type RoofingNewQuote } from "@/trades/roofing/schema";
+import type { SavedCustomItem } from "@/trades/roofing/pricing";
 
-export default async function EditQuotePage({
-  params,
-}: {
+
+type PageProps = {
   params: Promise<{ id: string }>;
-}) {
+};
+
+export default async function QuoteEditPage({ params }: PageProps) {
   const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const rateCard = await loadRoofingRateCardForUser(
-    supabase as any,
-    auth.user.id
-  );
+  const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
 
-  const { data: savedItems } = await supabase
-    .from("saved_custom_items")
-    .select("*")
-    .eq("user_id", auth.user.id)
-    .eq("trade", "roofing")
-    .order("created_at", { ascending: true });
-
-  const customItems = savedItems ?? [];
-
-  // ✅ include status so we can block editing before UI loads
   const { data: quote, error } = await supabase
     .from("quotes")
-    .select("id, customer_name, payload, status")
+    .select("id, trade, inputs_json, selections_json")
     .eq("id", id)
     .single();
 
   if (error || !quote) redirect("/quotes");
 
-  // ✅ If final, do not allow opening edit page
-  const status = String((quote as any).status ?? "draft");
-  if (status === "accepted" || status === "rejected") {
-    redirect(`/quotes/${quote.id}`);
-  }
+  const initialMaybe: unknown = {
+    inputs: quote.inputs_json ?? {},
+    selections: quote.selections_json ?? {},
+  };
 
-  const zero = isZeroRateCard(rateCard);
+  const parsed = RoofingNewQuoteSchema.safeParse(initialMaybe);
+  const initialPayload: RoofingNewQuote | undefined = parsed.success ? parsed.data : undefined;
 
-  const initialPayload: unknown =
-    (quote as any).payload ?? { inputs: { customer_name: "" }, selections: {} };
+  // load saved items for roofing
+  const { data: savedItems } = await supabase
+    .from("custom_items")
+    .select("id, name, pricing_type, unit_label, unit_price, taxable, trade, user_id, created_at, updated_at")
+    .eq("user_id", auth.user.id)
+    .eq("trade", "roofing")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <Link href={`/quotes/${quote.id}`}>
+        <Link href={`/quotes/${id}`}>
           <Button variant="outline">← Back</Button>
         </Link>
-        <div className="text-sm text-foreground/60">
-          Editing {(quote as any).customer_name || "Quote"}
-        </div>
+        <div className="text-sm text-foreground/60">Edit Quote</div>
       </div>
 
-      {zero ? (
-        <div className="rounded-2xl border bg-card p-4 text-sm text-destructive">
-          Roofing rate card loaded but looks like all zeros. Check Settings →
-          Roofing.
-        </div>
-      ) : null}
-
       <NewQuoteClient
-        rates={rateCard as any}
-        customItems={customItems as any}
-        editId={(quote as any).id}
-        initialPayload={initialPayload as any}
+        rates={rateCard}
+        customItems={(savedItems ?? []) as SavedCustomItem[]}
+        editId={id}
+        initialPayload={initialPayload}
       />
     </main>
   );

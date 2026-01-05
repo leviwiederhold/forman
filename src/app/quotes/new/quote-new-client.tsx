@@ -32,6 +32,28 @@ function safeMessage(err: unknown) {
   }
 }
 
+function NumInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: number | undefined;
+  onChange: (v: number) => void;
+  placeholder?: string;
+}) {
+  return (
+    <Input
+      type="number"
+      step="0.01"
+      inputMode="decimal"
+      className="max-w-[180px]"
+      value={typeof value === "number" && Number.isFinite(value) ? value : ""}
+      placeholder={placeholder}
+      onChange={(e) => onChange(Number(e.target.value))}
+    />
+  );
+}
+
 export function NewQuoteClient({
   rates,
   customItems,
@@ -68,13 +90,18 @@ export function NewQuoteClient({
         selections: {
           ridge_vent_selected: false,
           ridge_vent_lf: undefined,
+
           drip_edge_selected: false,
           drip_edge_lf: undefined,
+
           ice_water_selected: false,
           ice_water_squares: undefined,
+
           steep_charge_selected: false,
           permit_fee_selected: false,
+
           tearoff_selected: true,
+
           selected_saved_custom_item_ids: [],
           one_time_custom_items: [],
         },
@@ -130,7 +157,7 @@ export function NewQuoteClient({
 
   function addOneTimeItem() {
     const next: OneTimeCustomItem[] = [
-      ...selections.one_time_custom_items,
+      ...(selections.one_time_custom_items ?? []),
       {
         name: "",
         pricing_type: "flat",
@@ -319,6 +346,135 @@ export function NewQuoteClient({
 
         <Separator />
 
+        {/* ✅ ADD-ONS (THIS WAS MISSING) */}
+        <div className="text-sm text-foreground/80">Add-ons</div>
+        <div className="space-y-2">
+          <div className="rounded-xl border px-3 py-3 space-y-3">
+            {/* Ridge vent */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-foreground/85">Ridge vent</div>
+                <div className="text-xs text-foreground/60">Per LF</div>
+              </div>
+              <Checkbox
+                checked={selections.ridge_vent_selected}
+                onCheckedChange={(v) =>
+                  form.setValue("selections.ridge_vent_selected", Boolean(v), {
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
+            {selections.ridge_vent_selected ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-xs text-foreground/60">Linear feet (LF)</div>
+                <NumInput
+                  value={selections.ridge_vent_lf}
+                  onChange={(n) =>
+                    form.setValue("selections.ridge_vent_lf", n, { shouldValidate: true })
+                  }
+                  placeholder="e.g. 40"
+                />
+              </div>
+            ) : null}
+
+            <Separator />
+
+            {/* Drip edge */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-foreground/85">Drip edge</div>
+                <div className="text-xs text-foreground/60">Per LF</div>
+              </div>
+              <Checkbox
+                checked={selections.drip_edge_selected}
+                onCheckedChange={(v) =>
+                  form.setValue("selections.drip_edge_selected", Boolean(v), {
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
+            {selections.drip_edge_selected ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-xs text-foreground/60">Linear feet (LF)</div>
+                <NumInput
+                  value={selections.drip_edge_lf}
+                  onChange={(n) =>
+                    form.setValue("selections.drip_edge_lf", n, { shouldValidate: true })
+                  }
+                  placeholder="e.g. 120"
+                />
+              </div>
+            ) : null}
+
+            <Separator />
+
+            {/* Ice & water */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-foreground/85">Ice & water shield</div>
+                <div className="text-xs text-foreground/60">Per square</div>
+              </div>
+              <Checkbox
+                checked={selections.ice_water_selected}
+                onCheckedChange={(v) =>
+                  form.setValue("selections.ice_water_selected", Boolean(v), {
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
+            {selections.ice_water_selected ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-xs text-foreground/60">Squares</div>
+                <NumInput
+                  value={selections.ice_water_squares}
+                  onChange={(n) =>
+                    form.setValue("selections.ice_water_squares", n, { shouldValidate: true })
+                  }
+                  placeholder="e.g. 6"
+                />
+              </div>
+            ) : null}
+
+            <Separator />
+
+            {/* One-time fees */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-foreground/85">Steep roof charge</div>
+                <div className="text-xs text-foreground/60">Flat fee</div>
+              </div>
+              <Checkbox
+                checked={selections.steep_charge_selected}
+                onCheckedChange={(v) =>
+                  form.setValue("selections.steep_charge_selected", Boolean(v), {
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm text-foreground/85">Permit fee</div>
+                <div className="text-xs text-foreground/60">Flat fee</div>
+              </div>
+              <Checkbox
+                checked={selections.permit_fee_selected}
+                onCheckedChange={(v) =>
+                  form.setValue("selections.permit_fee_selected", Boolean(v), {
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
         <div className="text-sm text-foreground/80">Saved items (My Items)</div>
         <div className="space-y-2">
           {customItems.length === 0 ? (
@@ -431,7 +587,9 @@ export function NewQuoteClient({
                         <div className="text-xs text-foreground/60">Unit label</div>
                         <Input
                           value={it.unit_label ?? ""}
-                          onChange={(e) => updateOneTimeItem(idx, { unit_label: e.target.value })}
+                          onChange={(e) =>
+                            updateOneTimeItem(idx, { unit_label: e.target.value })
+                          }
                           placeholder="each"
                         />
                       </div>

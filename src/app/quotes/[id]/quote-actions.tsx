@@ -2,54 +2,91 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ShareLinkButton } from "@/components/quotes/ShareLinkButton";
 
-export default function QuoteActions({
-  quoteId,
-  status,
-  customerName,
-}: {
-  quoteId: string;
-  status: string | null;
-  customerName?: string | null;
-}) {
-  const isFinal = status === "accepted" || status === "rejected";
+type Props = {
+  id: string;
+  customerName: string;
+  total: number;
+  shareToken: string;
+};
+
+function money(n: number) {
+  const v = Number.isFinite(n) ? n : 0;
+  return `$${v.toFixed(2)}`;
+}
+
+export function QuoteActions({ id, customerName, total, shareToken }: Props) {
+  const router = useRouter();
+  const [copied, setCopied] = React.useState(false);
+
+  async function onCopyLink() {
+    if (!shareToken) {
+      alert("Missing share token for this quote.");
+      return;
+    }
+
+    // ✅ absolute URL + correct share route
+    const url = new URL(`/quotes/share/${shareToken}`, window.location.origin).toString();
+
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  }
+
+  function onEmail() {
+    if (!shareToken) {
+      alert("Missing share token for this quote.");
+      return;
+    }
+
+    const url = new URL(`/quotes/share/${shareToken}`, window.location.origin).toString();
+    const subject = "Here is your quote";
+    const body = `Hi ${customerName || "there"},\n\nHere is your quote link:\n${url}\n\nTotal: ${money(
+      total
+    )}\n`;
+
+    window.location.href = `mailto:?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function onDuplicate() {
+    const res = await fetch(`/api/quotes/${id}/duplicate`, { method: "POST" });
+    if (!res.ok) {
+      alert("Duplicate failed.");
+      return;
+    }
+
+    // If your API returns JSON with new id, handle it:
+    // const json = (await res.json()) as { id?: string };
+    // if (json.id) router.push(`/quotes/${json.id}`);
+
+    router.refresh();
+  }
 
   return (
     <div className="flex flex-wrap gap-2">
-      {/* EDIT (disabled if final) */}
-      {!isFinal ? (
-        <Link href={`/quotes/${quoteId}/edit`}>
-          <Button variant="outline">Edit</Button>
-        </Link>
-      ) : (
-        <Button variant="outline" disabled title="Duplicate to revise">
-          Edit
-        </Button>
-      )}
-
-      {/* DUPLICATE (always allowed) */}
-      <Link href={`/api/quotes/${quoteId}/duplicate`}>
-        <Button variant="outline">Duplicate</Button>
+      <Link href={`/quotes/${id}/edit`}>
+        <Button variant="outline">Edit</Button>
       </Link>
 
-      {/* PDF */}
-      <a href={`/api/quotes/${quoteId}/pdf`}>
+      <Button variant="outline" onClick={onDuplicate}>
+        Duplicate
+      </Button>
+
+      <Link href={`/api/quotes/${id}/pdf`}>
         <Button variant="outline">Download PDF</Button>
-      </a>
+      </Link>
 
-      {/* ✅ CORRECT SHARE LINK */}
-      <ShareLinkButton quoteId={quoteId} />
+      <Button variant="outline" onClick={onCopyLink}>
+        {copied ? "Copied!" : "Copy Link"}
+      </Button>
 
-      {/* EMAIL (simple v1) */}
-      <a
-        href={`mailto:?subject=Roofing Quote&body=Here is your quote for ${
-          customerName || "your project"
-        }.`}
-      >
-        <Button variant="outline">Email</Button>
-      </a>
+      <Button variant="outline" onClick={onEmail}>
+        Email
+      </Button>
     </div>
   );
 }

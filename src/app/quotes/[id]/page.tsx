@@ -1,19 +1,41 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { ShareLinkButton } from "@/components/quotes/ShareLinkButton";
 
-function money(n: unknown) {
-  const v = Number(n ?? 0);
-  return `$${(Number.isFinite(v) ? v : 0).toFixed(2)}`;
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { JsonValue } from "@/lib/types/json";
+import { Button } from "@/components/ui/button";
+import { QuoteActions } from "./quote-actions";
+
+type QuoteView = {
+  id: string;
+  trade: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  status: string | null;
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
+  line_items_json: JsonValue | null;
+  created_at: string | null;
+
+  // ✅ ADD THIS
+  share_token: string | null;
+};
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+function asArray(v: JsonValue | null): unknown[] {
+  return Array.isArray(v) ? v : [];
 }
 
-export default async function QuoteDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+function money(n: number | null | undefined) {
+  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return `$${v.toFixed(2)}`;
+}
+
+export default async function QuoteDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
@@ -23,151 +45,102 @@ export default async function QuoteDetailPage({
   const { data: quote, error } = await supabase
     .from("quotes")
     .select(
-      `
-      id,
-      customer_name,
-      customer_address,
-      status,
-      subtotal,
-      tax,
-      total,
-      line_items_json,
-      created_at
-    `
+      // ✅ INCLUDE share_token
+      "id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, share_token"
     )
     .eq("id", id)
-    .single();
+    .single<QuoteView>();
 
   if (error || !quote) redirect("/quotes");
 
-  const status = String(quote.status ?? "draft");
-  const isFinal = status === "accepted" || status === "rejected";
-
-  const items = Array.isArray(quote.line_items_json)
-    ? quote.line_items_json
-    : [];
+  const items = asArray(quote.line_items_json);
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between gap-3">
         <Link href="/quotes">
           <Button variant="outline">← Back</Button>
         </Link>
-
-        <div className="flex flex-wrap gap-2">
-          {/* STATUS BUTTONS (optional internal controls) */}
-          <Button variant="secondary" disabled>
-            {status}
-          </Button>
-
-          {/* EDIT (blocked if accepted/rejected) */}
-          {!isFinal ? (
-            <Link href={`/quotes/${quote.id}/edit`}>
-              <Button variant="outline">Edit</Button>
-            </Link>
-          ) : (
-            <Button variant="outline" disabled title="Duplicate to revise">
-              Edit
-            </Button>
-          )}
-
-          {/* DUPLICATE (always allowed) */}
-          <Link href={`/api/quotes/${quote.id}/duplicate`}>
-            <Button variant="outline">Duplicate</Button>
-          </Link>
-        </div>
+        <div className="text-sm text-foreground/60">Quote</div>
       </div>
 
-      {/* ACTIONS */}
-      <div className="flex flex-wrap gap-2">
-        <a href={`/api/quotes/${quote.id}/pdf`}>
-          <Button variant="outline">Download PDF</Button>
-        </a>
-
-        {/* ✅ THIS is the ONLY copy link */}
-        <ShareLinkButton quoteId={quote.id} />
-
-        {/* SIMPLE EMAIL */}
-        <a
-          href={`mailto:?subject=Roofing Quote&body=Here is your quote:%0D%0A`}
-        >
-          <Button variant="outline">Email</Button>
-        </a>
-      </div>
-
-      {/* SUMMARY */}
       <div className="rounded-2xl border bg-card p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-sm text-foreground/60">Customer</div>
-            <div className="text-lg">
-              {quote.customer_name || "Customer"}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="truncate text-lg font-medium">
+              {quote.customer_name ?? "Unnamed"}
             </div>
-            {quote.customer_address ? (
-              <div className="text-sm text-foreground/60">
-                {quote.customer_address}
-              </div>
-            ) : null}
+            <div className="text-xs text-foreground/60">
+              {quote.trade} · {quote.status ?? "draft"}
+              {quote.created_at ? ` · ${new Date(quote.created_at).toLocaleString()}` : ""}
+            </div>
           </div>
 
           <div className="text-right">
-            <div className="text-sm text-foreground/60">Total</div>
-            <div className="text-2xl font-medium">
-              {money(quote.total)}
-            </div>
-            <div className="text-xs text-foreground/60">
-              Subtotal {money(quote.subtotal)} · Tax {money(quote.tax)}
-            </div>
+            <div className="text-xs text-foreground/60">Total</div>
+            <div className="text-lg font-medium">{money(quote.total)}</div>
           </div>
         </div>
 
-        <div className="mt-2 text-xs text-foreground/60">
-          Created {new Date(quote.created_at).toLocaleString()}
+        <div className="mt-4">
+          <QuoteActions
+            id={quote.id}
+            customerName={quote.customer_name ?? ""}
+            total={quote.total ?? 0}
+            // ✅ PASS share token down to Copy Link / Email
+            shareToken={quote.share_token ?? ""}
+          />
         </div>
       </div>
 
-      {/* LINE ITEMS */}
       <div className="rounded-2xl border bg-card p-5">
-        <div className="mb-3 text-sm text-foreground/60">Line items</div>
+        <div className="text-sm text-foreground/80">Totals</div>
+        <div className="mt-3 rounded-xl border p-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-foreground/70">Subtotal</span>
+            <span>{money(quote.subtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-foreground/70">Tax</span>
+            <span>{money(quote.tax)}</span>
+          </div>
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span>{money(quote.total)}</span>
+          </div>
+        </div>
+      </div>
 
-        <div className="space-y-2">
+      <div className="rounded-2xl border bg-card p-5">
+        <div className="text-sm text-foreground/80">Line items</div>
+
+        <div className="mt-3 rounded-xl border p-3 text-sm">
           {items.length === 0 ? (
-            <div className="text-sm text-foreground/60">
-              No line items found.
-            </div>
+            <div className="text-foreground/60">No line items found.</div>
           ) : (
-            items.map((it: any, idx: number) => {
-              const name = it?.name ?? it?.label ?? `Item ${idx + 1}`;
-              const qty = it?.qty ?? it?.quantity ?? null;
-              const unit = it?.unit ?? "";
-              const amount =
-                it?.subtotal ??
-                it?.total ??
-                it?.amount ??
-                it?.line_total ??
-                it?.extended_price ??
-                0;
+            <div className="space-y-2">
+              {items.map((raw, idx) => {
+                const obj = (raw ?? {}) as Record<string, unknown>;
+                const name = String(obj.name ?? obj.label ?? `Item ${idx + 1}`);
+                const qty = obj.quantity ?? obj.qty ?? "";
+                const unit = obj.unit ?? "";
+                const unitPrice = Number(obj.unit_price ?? obj.price ?? 0);
+                const subtotal = Number(obj.subtotal ?? obj.amount ?? 0);
 
-              return (
-                <div
-                  key={`${name}-${idx}`}
-                  className="flex items-center justify-between rounded-xl border px-4 py-2"
-                >
-                  <div>
-                    <div className="text-sm">{name}</div>
-                    {qty != null ? (
+                return (
+                  <div key={idx} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-foreground/80">{name}</div>
                       <div className="text-xs text-foreground/60">
-                        {qty} {unit}
+                        {qty ? `${qty} ${unit}` : ""}
+                        {qty ? ` × $${unitPrice.toFixed(2)}` : ""}
                       </div>
-                    ) : null}
+                    </div>
+                    <div className="text-foreground/80">${subtotal.toFixed(2)}</div>
                   </div>
-                  <div className="text-sm">
-                    {money(amount)}
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

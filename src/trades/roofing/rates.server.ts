@@ -1,46 +1,47 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ROOFING_RATE_DEFAULTS } from "@/trades/roofing/schema";
+import { RoofingRateCardSchema, type RoofingRateCard } from "./schema";
 
-/**
- * Canonical rate source:
- *   public.rate_cards where user_id = <uid> and trade = 'roofing'
- *   use newest updated_at
- */
+type RateCardRow = {
+  user_id: string;
+  trade: string;
+  rates_json: unknown;
+  updated_at: string;
+};
+
+export function isZeroRateCard(card: RoofingRateCard) {
+  // conservative: if every numeric is 0, treat as zero
+  const nums = Object.values(card).filter((v) => typeof v === "number") as number[];
+  return nums.length > 0 && nums.every((n) => n === 0);
+}
+
 export async function loadRoofingRateCardForUser(
   supabase: SupabaseClient,
   userId: string
-) {
+): Promise<RoofingRateCard> {
   const { data, error } = await supabase
     .from("rate_cards")
-    .select("rates_json, updated_at")
+    .select("user_id, trade, rates_json, updated_at")
     .eq("user_id", userId)
     .eq("trade", "roofing")
     .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
   if (error) {
-    console.warn("[rates] error loading from rate_cards:", error.message);
-    return ROOFING_RATE_DEFAULTS as any;
+    throw new Error(`Failed to load rate card: ${error.message}`);
   }
 
-  if (!data?.rates_json) {
-    console.warn("[rates] not found in rate_cards. Using defaults.");
-    return ROOFING_RATE_DEFAULTS as any;
+  const row = (data?.[0] ?? null) as RateCardRow | null;
+
+  if (!row) {
+    // If you have defaults elsewhere, import them; otherwise fail loudly.
+    // This matches your constraint: do NOT silently fall back.
+    throw new Error("No roofing rate card found. Set rates in Settings → Roofing.");
   }
 
-  console.log("[rates] source=rate_cards trade=roofing");
-  return data.rates_json as any;
-}
+  const parsed = RoofingRateCardSchema.safeParse(row.rates_json);
+  if (!parsed.success) {
+    throw new Error("Roofing rate card is invalid. Fix Settings → Roofing.");
+  }
 
-export function isZeroRateCard(rateCard: any) {
-  if (!rateCard || typeof rateCard !== "object") return true;
-  const keys = [
-    "labor_per_square",
-    "shingles_per_square",
-    "underlayment_per_square",
-    "tearoff_disposal_per_square",
-    "minimum_job_price",
-  ];
-  return keys.every((k) => Number((rateCard as any)[k] ?? 0) === 0);
+  return parsed.data;
 }

@@ -1,3 +1,4 @@
+// src/app/quotes/share/[token]/page.tsx
 import { createClient } from "@supabase/supabase-js";
 import ShareRespondButtons from "./share-respond-buttons";
 
@@ -6,6 +7,10 @@ type PageProps = { params: Promise<{ token: string }> };
 function money(n: unknown) {
   const v = Number(n ?? 0);
   return `$${(Number.isFinite(v) ? v : 0).toFixed(2)}`;
+}
+
+function asRecord(v: unknown): Record<string, unknown> {
+  return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
 }
 
 export default async function QuoteSharePage({ params }: PageProps) {
@@ -17,7 +22,6 @@ export default async function QuoteSharePage({ params }: PageProps) {
     {
       global: {
         headers: {
-          // Required for public RLS access
           "x-share-token": token,
         },
       },
@@ -57,27 +61,19 @@ export default async function QuoteSharePage({ params }: PageProps) {
   const status = String(quote.status ?? "draft");
   const isFinal = status === "accepted" || status === "rejected";
 
-  const items = Array.isArray(quote.line_items_json)
-    ? quote.line_items_json
-    : [];
+  const items: unknown[] = Array.isArray(quote.line_items_json) ? quote.line_items_json : [];
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-3xl px-6 py-10">
         {/* HEADER */}
         <div className="mb-6">
-          <div className="text-xs uppercase tracking-wider text-white/60">
-            Quote
-          </div>
+          <div className="text-xs uppercase tracking-wider text-white/60">Quote</div>
 
-          <h1 className="mt-1 text-2xl font-light">
-            {quote.customer_name || "Customer"}
-          </h1>
+          <h1 className="mt-1 text-2xl font-light">{quote.customer_name || "Customer"}</h1>
 
           {quote.customer_address ? (
-            <div className="mt-1 text-sm text-white/70">
-              {quote.customer_address}
-            </div>
+            <div className="mt-1 text-sm text-white/70">{quote.customer_address}</div>
           ) : null}
 
           <div className="mt-2 text-sm text-white/70">
@@ -100,9 +96,7 @@ export default async function QuoteSharePage({ params }: PageProps) {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="flex items-baseline justify-between">
             <div className="text-sm text-white/70">Total</div>
-            <div className="text-3xl font-light">
-              {money(quote.total)}
-            </div>
+            <div className="text-3xl font-light">{money(quote.total)}</div>
           </div>
           <div className="mt-2 text-sm text-white/70">
             Subtotal {money(quote.subtotal)} · Tax {money(quote.tax)}
@@ -111,70 +105,80 @@ export default async function QuoteSharePage({ params }: PageProps) {
 
         {/* RESPOND */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">
-            Respond
-          </div>
+          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">Respond</div>
 
           <ShareRespondButtons token={token} disabled={isFinal} />
 
           <div className="mt-3 text-xs text-white/60">
-            {isFinal
-              ? `This quote has already been ${status}.`
-              : "Accepting or rejecting will update the quote status."}
+            {isFinal ? `This quote has already been ${status}.` : "Accepting or rejecting will update the quote status."}
           </div>
         </div>
 
-        {/* LINE ITEMS */}
+        {/* LINE ITEMS (receipt style) */}
         <div className="mt-8">
-          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">
-            Line items
-          </div>
+          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">Line items</div>
 
-          <div className="space-y-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5">
             {items.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/70">
-                No line items found.
-              </div>
+              <div className="p-4 text-white/70">No line items found.</div>
             ) : (
-              items.map((it: any, idx: number) => {
-                const name = it?.name ?? it?.label ?? `Item ${idx + 1}`;
-                const qty = it?.qty ?? it?.quantity ?? null;
-                const unit = it?.unit ?? "";
-                const amount =
-                  it?.subtotal ??
-                  it?.total ??
-                  it?.amount ??
-                  it?.line_total ??
-                  it?.extended_price ??
-                  0;
+              <div className="divide-y divide-white/10">
+                {items.map((it: unknown, idx: number) => {
+                  const obj = asRecord(it);
 
-                return (
-                  <div
-                    key={`${name}-${idx}`}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
-                  >
-                    <div>
-                      <div className="text-base font-light">
-                        {String(name)}
+                  const name = String(obj["name"] ?? obj["label"] ?? `Item ${idx + 1}`);
+
+                  const qtyVal = obj["qty"] ?? obj["quantity"];
+                  const qty =
+                    typeof qtyVal === "number" || typeof qtyVal === "string" ? String(qtyVal) : "";
+
+                  const unit = String(obj["unit"] ?? "");
+
+                  const amount =
+                    obj["subtotal"] ??
+                    obj["total"] ??
+                    obj["amount"] ??
+                    obj["line_total"] ??
+                    obj["extended_price"] ??
+                    0;
+
+                  return (
+                    <div key={`${name}-${idx}`} className="flex items-start justify-between gap-4 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm text-white/90">{name}</div>
+                        {qty ? (
+                          <div className="text-xs text-white/60">
+                            {qty} {unit}
+                          </div>
+                        ) : null}
                       </div>
-                      {qty != null ? (
-                        <div className="text-sm text-white/60">
-                          {qty} {unit}
-                        </div>
-                      ) : null}
+                      <div className="shrink-0 text-sm text-white/90 tabular-nums">
+                        {money(amount)}
+                      </div>
                     </div>
-                    <div className="text-base">
-                      {money(amount)}
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
+
+            {/* receipt footer totals */}
+            <div className="border-t border-white/10 px-4 py-3 text-sm">
+              <div className="flex justify-between text-white/70">
+                <span>Subtotal</span>
+                <span className="tabular-nums">{money(quote.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-white/70">
+                <span>Tax</span>
+                <span className="tabular-nums">{money(quote.tax)}</span>
+              </div>
+              <div className="mt-2 flex justify-between text-white">
+                <span className="text-sm">Total</span>
+                <span className="text-base tabular-nums">{money(quote.total)}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-8 text-xs text-white/50">
-            This is a read-only shared link.
-          </div>
+          <div className="mt-6 text-xs text-white/50">This is a read-only shared link.</div>
         </div>
       </div>
     </div>

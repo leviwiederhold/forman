@@ -1,44 +1,45 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const BodySchema = z.object({
+type Params = { id: string };
+
+const StatusSchema = z.object({
   status: z.enum(["draft", "sent", "accepted", "rejected"]),
 });
 
+// PATCH /api/quotes/:id/status
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Params> }
 ) {
   const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  if (!auth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const parsed = BodySchema.safeParse(body);
+  const raw: unknown = await req.json();
+  const parsed = StatusSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const { error } = await supabase
-    .from("quotes")
-    .update({ status: parsed.data.status })
-    .eq("id", id);
+  const { status } = parsed.data;
 
-  if (error) {
-    return NextResponse.json(
-      { error: "Failed to update status", supabase: { message: error.message, code: (error as any).code } },
-      { status: 500 }
-    );
+  const { data, error } = await supabase
+    .from("quotes")
+    .update({ status })
+    .eq("id", id)
+    .select("id, status")
+    .single<{ id: string; status: string }>();
+
+  if (error || !data) {
+    return NextResponse.json({ error: error?.message ?? "Update failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return NextResponse.json({ id: data.id, status: data.status });
 }

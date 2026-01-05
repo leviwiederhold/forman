@@ -3,61 +3,67 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 
+function money(n: number) {
+  return `$${(Number.isFinite(n) ? n : 0).toFixed(2)}`;
+}
+
 export function EmailQuoteButton({
   quoteId,
   customerName,
   total,
 }: {
   quoteId: string;
-  customerName?: string | null;
-  total?: number | null;
+  customerName: string;
+  total: number;
 }) {
-  const [loading, setLoading] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
 
   async function email() {
     try {
-      setLoading(true);
+      setBusy(true);
 
+      // Ensure share link exists (best UX)
       const res = await fetch(`/api/quotes/${quoteId}/share`, { method: "POST" });
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(
-          typeof json === "object" && json && "error" in json
-            ? String((json as any).error)
-            : "Failed to generate share link"
-        );
-      }
+      const json = (await res.json()) as { url?: string; token?: string; error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Failed to create share link");
 
       const shareUrl =
-        typeof json === "object" && json && "share_url" in json
-          ? String((json as any).share_url)
-          : "";
+        json.url ??
+        (json.token ? `${window.location.origin}/quotes/share/${json.token}` : "");
 
-      const subject = `Roofing Quote${customerName ? ` - ${customerName}` : ""}`;
-      const bodyLines = [
+      const pdfUrl = `${window.location.origin}/api/quotes/${quoteId}/pdf`;
+
+      const subject = `Here is your quote${customerName ? ` for ${customerName}` : ""}`;
+      const body = [
         `Hi${customerName ? ` ${customerName}` : ""},`,
         ``,
-        `Here is your roofing quote${total != null ? ` for $${Number(total).toFixed(2)}` : ""}:`,
+        `Here is your quote total: ${money(total)}`,
+        ``,
+        `View quote (share link):`,
         shareUrl,
         ``,
-        `Thanks,`,
-        `Forman`,
-      ];
+        `Download PDF:`,
+        pdfUrl,
+        ``,
+        `Thanks!`,
+      ].join("\n");
 
-      const mailto = `mailto:?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+      // mailto cannot attach files; links are the correct approach
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+        body
+      )}`;
 
       window.location.href = mailto;
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Email failed");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
   return (
-    <Button variant="outline" onClick={email} disabled={loading}>
-      {loading ? "Preparing…" : "Email"}
+    <Button variant="secondary" onClick={email} disabled={busy}>
+      {busy ? "Preparing..." : "Email"}
     </Button>
   );
 }

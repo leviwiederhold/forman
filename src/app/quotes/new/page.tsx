@@ -1,26 +1,65 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 
 import { NewQuoteClient } from "./quote-new-client";
-import { loadRoofingRateCardForUser, isZeroRateCard } from "@/trades/roofing/rates.server";
+import {
+  loadRoofingRateCardForUser,
+  isZeroRateCard,
+} from "@/trades/roofing/rates.server";
+
+import type { SavedCustomItem } from "@/trades/roofing/pricing";
+
+// Helper to infer async return types cleanly
+type AwaitedReturn<T extends (...args: never[]) => Promise<unknown>> = Awaited<
+  ReturnType<T>
+>;
+
+// Canonical roofing rate card type (inferred from loader)
+type RoofingRateCard = AwaitedReturn<typeof loadRoofingRateCardForUser>;
 
 export default async function NewQuotePage() {
   const supabase = await createSupabaseServerClient();
+
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const rateCard = await loadRoofingRateCardForUser(supabase as any, auth.user.id);
+  // Canonical loader (DO NOT BREAK)
+  const rateCard: RoofingRateCard = await loadRoofingRateCardForUser(
+    supabase,
+    auth.user.id
+  );
 
+  // ✅ IMPORTANT: This table is "custom_items" (your DB does not have saved_custom_items)
   const { data: savedItems } = await supabase
-    .from("saved_custom_items")
-    .select("*")
+    .from("custom_items")
+    .select(
+      `
+        id,
+        user_id,
+        trade,
+        name,
+        pricing_type,
+        unit_label,
+        unit_price,
+        taxable,
+        is_active,
+        created_at,
+        updated_at
+      `
+    )
     .eq("user_id", auth.user.id)
     .eq("trade", "roofing")
-    .order("created_at", { ascending: true });
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false });
 
-  const customItems = savedItems ?? [];
+  // Your NewQuoteClient expects SavedCustomItem[].
+  // We'll cast from custom_items rows to the same shape it needs.
+  // (If you want, we can later rename this type to CustomItem and remove casting.)
+  const customItems: SavedCustomItem[] =
+    (savedItems ?? []) as unknown as SavedCustomItem[];
 
   const zero = isZeroRateCard(rateCard);
 
@@ -39,7 +78,7 @@ export default async function NewQuotePage() {
         </div>
       ) : null}
 
-      <NewQuoteClient rates={rateCard as any} customItems={customItems as any} />
+      <NewQuoteClient rates={rateCard} customItems={customItems} />
     </main>
   );
 }

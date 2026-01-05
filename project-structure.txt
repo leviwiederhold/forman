@@ -1,0 +1,130 @@
+.
+├── components.json
+├── eslint.config.mjs
+├── forman-src.zip
+├── middleware.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── project-structure.txt
+├── public
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── README.md
+├── src
+│   ├── app
+│   │   ├── api
+│   │   │   ├── custom-items
+│   │   │   │   └── route.ts
+│   │   │   ├── feedback
+│   │   │   │   └── route.ts
+│   │   │   ├── quotes
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── duplicate
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   ├── email
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   ├── pdf
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   ├── route.ts
+│   │   │   │   │   ├── share
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── status
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── share
+│   │   │   │       └── [token]
+│   │   │   │           └── respond
+│   │   │   │               └── route.ts
+│   │   │   └── rate-cards
+│   │   │       └── roofing
+│   │   │           └── route.ts
+│   │   ├── auth
+│   │   │   ├── sign-in
+│   │   │   │   └── route.ts
+│   │   │   ├── sign-out
+│   │   │   │   └── route.ts
+│   │   │   └── sign-up
+│   │   │       └── route.ts
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── feedback
+│   │   │   └── page.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── login
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── quotes
+│   │   │   ├── [id]
+│   │   │   │   ├── edit
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── quote-actions.tsx
+│   │   │   ├── new
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── quote-editor-client.tsx
+│   │   │   │   └── quote-new-client.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── quotes-list-client.tsx
+│   │   │   └── share
+│   │   │       └── [token]
+│   │   │           ├── page.tsx
+│   │   │           └── share-respond-buttons.tsx
+│   │   ├── settings
+│   │   │   └── roofing
+│   │   │       ├── my-items.tsx
+│   │   │       ├── page.tsx
+│   │   │       └── roofing-settings-form.tsx
+│   │   ├── signup
+│   │   │   └── page.tsx
+│   │   └── tailwind.config.ts
+│   ├── components
+│   │   ├── app-header.tsx
+│   │   ├── layout
+│   │   │   └── Footer.tsx
+│   │   ├── quotes
+│   │   │   ├── EmailQuoteButton.tsx
+│   │   │   ├── QuoteActions.tsx
+│   │   │   └── ShareLinkButton.tsx
+│   │   ├── theme-provider.tsx
+│   │   └── ui
+│   │       ├── button.tsx
+│   │       ├── checkbox.tsx
+│   │       ├── dialog.tsx
+│   │       ├── form.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── switch.tsx
+│   │       ├── table.tsx
+│   │       └── textarea.tsx
+│   ├── lib
+│   │   ├── http.ts
+│   │   ├── supabase
+│   │   │   ├── client.ts
+│   │   │   └── server.ts
+│   │   ├── types
+│   │   │   └── json.ts
+│   │   ├── types.ts
+│   │   └── utils.ts
+│   └── trades
+│       └── roofing
+│           ├── defaultRateCard.ts
+│           ├── pricing.ts
+│           ├── proposal.ts
+│           ├── rates.server.ts
+│           └── schema.ts
+├── src-files.txt
+├── tsconfig.json
+└── tsconfig.tsbuildinfo
+
+44 directories, 84 files
