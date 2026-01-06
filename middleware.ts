@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
@@ -24,23 +25,23 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  const { data } = await supabase.auth.getSession();
-  const session = data.session;
+  // ✅ SAFE across all Supabase v2 / SSR versions
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const pathname = req.nextUrl.pathname;
 
-    const isPublic =
+  const isPublic =
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/quotes/share/") ||
     pathname.startsWith("/feedback") ||
-    pathname.startsWith("/api/feedback") ||
-    pathname.startsWith("/api/quotes/share/");
-
+    pathname.startsWith("/api/feedback");
 
   if (isPublic) return res;
 
-  if (!session) {
+  if (!user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectTo", pathname);
