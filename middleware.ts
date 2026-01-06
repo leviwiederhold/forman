@@ -1,35 +1,23 @@
 // src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
-type CookieOptions = { [key: string]: unknown };
+function hasSupabaseAuthCookie(req: NextRequest) {
+  // Supabase cookies commonly look like:
+  // - sb-<project-ref>-auth-token
+  // - sb-access-token / sb-refresh-token (older setups)
+  const cookies = req.cookies.getAll();
+
+  return cookies.some((c) => {
+    const name = c.name;
+    return (
+      (name.startsWith("sb-") && name.endsWith("-auth-token")) ||
+      name === "sb-access-token" ||
+      name === "sb-refresh-token"
+    );
+  });
+}
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          res.cookies.set({ name, value, ...(options as Record<string, unknown>) });
-        },
-        remove(name: string, options: CookieOptions) {
-          res.cookies.set({ name, value: "", ...(options as Record<string, unknown>) });
-        },
-      },
-    }
-  );
-
-  // ✅ SAFE across all Supabase v2 / SSR versions
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const pathname = req.nextUrl.pathname;
 
   const isPublic =
@@ -39,16 +27,17 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/feedback") ||
     pathname.startsWith("/api/feedback");
 
-  if (isPublic) return res;
+  if (isPublic) return NextResponse.next();
 
-  if (!user) {
+  // ✅ No Supabase client calls here (avoids getSession/getUser type mismatches)
+  if (!hasSupabaseAuthCookie(req)) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
