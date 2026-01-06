@@ -13,7 +13,6 @@ export const RoofingRateCardSchema = z.object({
   minimum_job_price: z.number().min(0),
   markup_percent: z.number().min(0).max(500),
 
-  // Common add-ons (priced, but NOT "default selected")
   ridge_vent_per_lf: z.number().min(0),
   drip_edge_per_lf: z.number().min(0),
   ice_water_per_square: z.number().min(0),
@@ -38,6 +37,7 @@ export const ROOFING_RATE_DEFAULTS: RoofingRateCard = {
   steep_charge_flat: 450,
   permit_fee_flat: 250,
 };
+
 
 // -----------------------------
 // Custom Items (My Items)

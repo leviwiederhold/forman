@@ -9,10 +9,6 @@ type Props = {
   disabled?: boolean;
 };
 
-type ApiResponse =
-  | { ok: true; quote: { status: string; accepted_at: string | null; rejected_at: string | null } }
-  | { error: string };
-
 export default function ShareRespondButtons({ token, disabled }: Props) {
   const [loading, setLoading] = React.useState<"accept" | "reject" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
