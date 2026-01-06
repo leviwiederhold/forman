@@ -1,12 +1,10 @@
-// src/middleware.ts
+// middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 
 function hasSupabaseAuthCookie(req: NextRequest) {
-  // Supabase cookies commonly look like:
-  // - sb-<project-ref>-auth-token
-  // - sb-access-token / sb-refresh-token (older setups)
   const cookies = req.cookies.getAll();
 
+  // Common Supabase cookie patterns
   return cookies.some((c) => {
     const name = c.name;
     return (
@@ -17,19 +15,21 @@ function hasSupabaseAuthCookie(req: NextRequest) {
   });
 }
 
-export async function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   const isPublic =
     pathname === "/" ||
     pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/auth/") ||
     pathname.startsWith("/quotes/share/") ||
     pathname.startsWith("/feedback") ||
-    pathname.startsWith("/api/feedback");
+    pathname.startsWith("/api/feedback") ||
+    pathname.startsWith("/api/quotes/share/");
 
   if (isPublic) return NextResponse.next();
 
-  // ✅ No Supabase client calls here (avoids getSession/getUser type mismatches)
   if (!hasSupabaseAuthCookie(req)) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
