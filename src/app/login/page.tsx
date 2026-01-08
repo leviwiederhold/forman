@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { signIn } from "./actions";
 
 export default function LoginPage({
   searchParams,
@@ -39,7 +40,7 @@ export default function LoginPage({
           </div>
         ) : null}
 
-        <form action="/auth/sign-in" method="post" className="space-y-3">
+        <form action={signIn} className="space-y-3">
           <Input name="email" type="email" placeholder="Email" required />
           <Input
             name="password"
