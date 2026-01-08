@@ -1,9 +1,8 @@
-// src/app/auth/sign-out/route.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function POST(req: NextRequest) {
-  let res = NextResponse.redirect(new URL("/login", req.url));
+async function doSignOut(req: NextRequest) {
+  const res = NextResponse.redirect(new URL("/login", req.url));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +22,13 @@ export async function POST(req: NextRequest) {
   );
 
   await supabase.auth.signOut();
-
   return res;
+}
+
+export async function POST(req: NextRequest) {
+  return doSignOut(req);
+}
+
+export async function GET(req: NextRequest) {
+  return doSignOut(req);
 }

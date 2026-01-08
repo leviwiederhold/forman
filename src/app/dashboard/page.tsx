@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+export const dynamic = "force-dynamic";
+
 
 type QuoteRow = {
   id: string;
@@ -46,10 +48,12 @@ export default async function DashboardPage() {
   if (!auth.user) redirect("/login");
 
   const { data: quotes, error } = await supabase
-    .from("quotes")
-    .select("id, trade, created_at, inputs_json, pricing_json")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  .from("quotes")
+  .select("id, trade, created_at, inputs_json, pricing_json")
+  .eq("user_id", auth.user.id)
+  .order("created_at", { ascending: false })
+  .limit(10);
+
 
   const rows: QuoteRow[] = (quotes ?? []) as QuoteRow[];
 

@@ -6,6 +6,9 @@ import type { JsonValue } from "@/lib/types/json";
 import { Button } from "@/components/ui/button";
 import { QuoteActions } from "./quote-actions";
 
+export const dynamic = "force-dynamic";
+
+
 type QuoteView = {
   id: string;
   trade: string;
@@ -43,13 +46,12 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   if (!auth.user) redirect("/login");
 
   const { data: quote, error } = await supabase
-    .from("quotes")
-    .select(
-      // ✅ INCLUDE share_token
-      "id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, share_token"
-    )
-    .eq("id", id)
-    .single<QuoteView>();
+  .from("quotes")
+  .select("id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, share_token")
+  .eq("id", id)
+  .eq("user_id", auth.user.id)
+  .single<QuoteView>();
+
 
   if (error || !quote) redirect("/quotes");
 

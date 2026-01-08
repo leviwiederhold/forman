@@ -25,9 +25,12 @@ function getNumber(v: unknown, fallback = 0): number {
 }
 
 function randomToken(len = 22): string {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
   let out = "";
-  for (let i = 0; i < len; i += 1) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < len; i += 1) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
   return out;
 }
 
@@ -35,11 +38,14 @@ function randomToken(len = 22): string {
 export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { data, error } = await supabase
     .from("quotes")
     .select("id, trade, customer_name, status, subtotal, tax, total, created_at")
+    .eq("user_id", auth.user.id)
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -52,7 +58,9 @@ export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
 
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body: unknown = await req.json();
   const parsed = RoofingNewQuoteSchema.safeParse(body);
@@ -80,7 +88,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: ciErr.message }, { status: 500 });
   }
 
-  const selectedIds = Array.isArray(args.selections.selected_saved_custom_item_ids)
+  const selectedIds = Array.isArray(
+    args.selections.selected_saved_custom_item_ids
+  )
     ? args.selections.selected_saved_custom_item_ids
     : [];
 
@@ -145,15 +155,19 @@ export async function POST(req: Request) {
     share_token,
   } satisfies Record<string, unknown>;
 
-  const { data, error } = await supabase
+  // ✅ ACTUAL INSERT (you were missing this)
+  const { data: created, error: insertErr } = await supabase
     .from("quotes")
     .insert(insertPayload)
     .select("id")
-    .single<{ id: string }>();
+    .single();
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? "Insert failed" }, { status: 500 });
+  if (insertErr || !created) {
+    return NextResponse.json(
+      { error: insertErr?.message ?? "Insert failed" },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: created.id });
 }
