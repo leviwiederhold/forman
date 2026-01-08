@@ -113,6 +113,8 @@ export function RoofingSettingsForm({ initialRates }: { initialRates: RoofingRat
       });
 
       if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        console.log(j);
         setStatus("error");
         return;
       }
