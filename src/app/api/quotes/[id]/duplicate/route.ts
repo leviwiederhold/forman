@@ -9,8 +9,12 @@ type SupabaseLikeError = {
 
 type Params = { id: string };
 
-export async function POST(_req: Request, { params }: { params: Params }) {
+export async function POST(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
   const { id } = params;
+
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
