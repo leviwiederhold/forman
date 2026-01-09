@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -6,12 +6,11 @@ const StatusSchema = z.object({
   status: z.enum(["draft", "sent", "accepted", "rejected"]),
 });
 
-// PATCH /api/quotes/:id/status
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();

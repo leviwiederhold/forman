@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RoofingNewQuoteSchema } from "@/trades/roofing/schema";
@@ -42,12 +42,11 @@ function getNumber(v: unknown, fallback = 0): number {
   return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
 
-// GET /api/quotes/:id (private)
 export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -66,12 +65,11 @@ export async function GET(
   return NextResponse.json({ quote });
 }
 
-// PATCH /api/quotes/:id (private) — expects FULL RoofingNewQuoteSchema payload
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -94,10 +92,8 @@ export async function PATCH(
 
   const args = parsed.data;
 
-  // Canonical loader (DO NOT BREAK)
   const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
 
-  // ✅ Load active custom items so edit pricing matches create pricing
   const { data: allCustomItems, error: ciErr } = await supabase
     .from("custom_items")
     .select("id, name, pricing_type, unit_label, unit_price, taxable")

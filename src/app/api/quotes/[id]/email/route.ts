@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -7,10 +7,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -28,7 +28,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  // Confirm quote exists + belongs to user
   const { data: quote } = await supabase
     .from("quotes")
     .select("id")
@@ -38,7 +37,6 @@ export async function POST(
 
   if (!quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
 
-  // Stub: later integrate Resend/Postmark/etc.
   return NextResponse.json(
     { ok: true, message: "Email sending not implemented yet.", to: parsed.data.email },
     { status: 200 }

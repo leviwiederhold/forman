@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseLikeError = {
@@ -8,10 +8,10 @@ type SupabaseLikeError = {
 };
 
 export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -76,6 +76,5 @@ export async function POST(
     );
   }
 
-  // Client expects { id }
   return NextResponse.json({ id: created.id }, { status: 201 });
 }
