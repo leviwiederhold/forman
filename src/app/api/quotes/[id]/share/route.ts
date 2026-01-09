@@ -9,18 +9,18 @@ function randomToken(len = 22): string {
 }
 
 // POST /api/quotes/:id/share
-export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
+export async function POST(_req: Request, ctx: { params: { id: string } }) {
+  const { id } = ctx.params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // Read existing token (RLS ensures it's theirs)
   const { data: existing, error: readErr } = await supabase
     .from("quotes")
     .select("id, share_token")
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single<{ id: string; share_token: string | null }>();
 
   if (readErr || !existing) {
@@ -35,12 +35,12 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     const { error: upErr } = await supabase
       .from("quotes")
       .update({ share_token: token })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", auth.user.id);
 
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
 
-  // Client will build absolute URL; still return helpful pieces
   return NextResponse.json({
     token,
     url: `/quotes/share/${token}`,

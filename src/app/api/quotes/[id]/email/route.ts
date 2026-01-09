@@ -8,9 +8,9 @@ const BodySchema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -28,17 +28,15 @@ export async function POST(
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  // Confirm quote exists + belongs to user (RLS also protects)
   const { data: quote } = await supabase
     .from("quotes")
     .select("id")
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (!quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
 
-  // Stub: later you'll integrate Resend / Postmark / SendGrid
-  // For now, return success so UI flow works.
   return NextResponse.json(
     { ok: true, message: "Email sending not implemented yet.", to: parsed.data.email },
     { status: 200 }

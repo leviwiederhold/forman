@@ -10,11 +10,8 @@ const StatusSchema = z.object({
 });
 
 // PATCH /api/quotes/:id/status
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<Params> }
-) {
-  const { id } = await params;
+export async function PATCH(req: Request, { params }: { params: Params }) {
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -34,6 +31,7 @@ export async function PATCH(
     .from("quotes")
     .update({ status })
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .select("id, status")
     .single<{ id: string; status: string }>();
 

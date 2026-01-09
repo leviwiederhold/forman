@@ -7,13 +7,12 @@ type SupabaseLikeError = {
   details?: string | null;
 };
 
-type Params = { id: string };
-
 export async function POST(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+
 
 
   const supabase = await createSupabaseServerClient();

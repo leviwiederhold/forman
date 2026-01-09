@@ -26,9 +26,9 @@ function asLineItem(v: unknown): LineItem {
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -40,6 +40,7 @@ export async function GET(
       "id, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at"
     )
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (error || !quote) {
