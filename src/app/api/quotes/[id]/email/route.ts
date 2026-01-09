@@ -28,6 +28,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
+  // Confirm quote exists + belongs to user
   const { data: quote } = await supabase
     .from("quotes")
     .select("id")
@@ -37,6 +38,7 @@ export async function POST(
 
   if (!quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
 
+  // Stub: later integrate Resend/Postmark/etc.
   return NextResponse.json(
     { ok: true, message: "Email sending not implemented yet.", to: parsed.data.email },
     { status: 200 }

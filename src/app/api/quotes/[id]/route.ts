@@ -8,8 +8,6 @@ import type { JsonObject, JsonValue } from "@/lib/types/json";
 
 import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
 
-type Params = { id: string };
-
 type QuoteRow = {
   id: string;
   trade: string;
@@ -45,7 +43,10 @@ function getNumber(v: unknown, fallback = 0): number {
 }
 
 // GET /api/quotes/:id (private)
-export async function GET(_req: Request, { params }: { params: Params }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
   const { id } = params;
 
   const supabase = await createSupabaseServerClient();
@@ -66,14 +67,16 @@ export async function GET(_req: Request, { params }: { params: Params }) {
 }
 
 // PATCH /api/quotes/:id (private) — expects FULL RoofingNewQuoteSchema payload
-export async function PATCH(req: Request, { params }: { params: Params }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Ensure exists + owned (do not rely only on RLS)
   const { data: exists, error: fetchErr } = await supabase
     .from("quotes")
     .select("id")
@@ -86,7 +89,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
   const body: unknown = await req.json();
   const parsed = RoofingNewQuoteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid quote payload", issues: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: "Invalid quote payload" }, { status: 400 });
   }
 
   const args = parsed.data;
@@ -94,9 +97,34 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
   // Canonical loader (DO NOT BREAK)
   const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
 
-  // TODO (recommended): load selected custom items like POST does,
-  // so edits/recacls include custom item pricing. Leaving empty keeps behavior consistent with your current file.
-  const savedCustomItems: SavedCustomItem[] = [];
+  // ✅ Load active custom items so edit pricing matches create pricing
+  const { data: allCustomItems, error: ciErr } = await supabase
+    .from("custom_items")
+    .select("id, name, pricing_type, unit_label, unit_price, taxable")
+    .eq("user_id", auth.user.id)
+    .eq("trade", "roofing")
+    .eq("is_active", true);
+
+  if (ciErr) {
+    return NextResponse.json({ error: ciErr.message }, { status: 500 });
+  }
+
+  const selectedIds = Array.isArray(args.selections.selected_saved_custom_item_ids)
+    ? args.selections.selected_saved_custom_item_ids
+    : [];
+
+  const selectedSet = new Set(selectedIds);
+
+  const savedCustomItems: SavedCustomItem[] = (allCustomItems ?? [])
+    .filter((row) => selectedSet.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      pricing_type: row.pricing_type as SavedCustomItem["pricing_type"],
+      unit_label: row.unit_label ?? null,
+      unit_price: row.unit_price,
+      taxable: row.taxable,
+    }));
 
   const computed = calculateRoofingQuote({
     args,

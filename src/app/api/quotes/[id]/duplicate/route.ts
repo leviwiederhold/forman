@@ -9,17 +9,17 @@ type SupabaseLikeError = {
 
 export async function POST(
   _req: Request,
-  ctx: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await ctx.params; // ✅ REQUIRED: params is a Promise
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
-
   if (!auth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Fetch original quote (defense-in-depth: filter by user_id too)
   const { data: original, error: fetchErr } = await supabase
     .from("quotes")
     .select(
@@ -76,5 +76,6 @@ export async function POST(
     );
   }
 
+  // Client expects { id }
   return NextResponse.json({ id: created.id }, { status: 201 });
 }

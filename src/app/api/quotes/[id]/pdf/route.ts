@@ -25,7 +25,7 @@ function asLineItem(v: unknown): LineItem {
 }
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;

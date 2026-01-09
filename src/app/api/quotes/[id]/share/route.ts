@@ -9,8 +9,11 @@ function randomToken(len = 22): string {
 }
 
 // POST /api/quotes/:id/share
-export async function POST(_req: Request, ctx: { params: { id: string } }) {
-  const { id } = ctx.params;
+export async function POST(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
