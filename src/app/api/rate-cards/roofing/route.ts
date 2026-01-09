@@ -26,7 +26,6 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // If none exists, return defaults (not saved yet)
   if (!data) {
     return NextResponse.json({
       exists: false,
@@ -71,13 +70,13 @@ export async function PUT(req: Request) {
     );
   }
 
-  // Check existing
+  // ✅ Find latest rate card for this user + trade (no fragile name matching)
   const { data: existing, error: existingErr } = await supabase
     .from("rate_cards")
     .select("id")
     .eq("user_id", auth.user.id)
     .eq("trade", TRADE)
-    .eq("name", DEFAULT_NAME)
+    .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -110,6 +109,7 @@ export async function PUT(req: Request) {
     .update({
       rates_json: parsed.data,
       currency: "USD",
+      name: DEFAULT_NAME,
     })
     .eq("id", existing.id)
     .select("id, updated_at")

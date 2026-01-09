@@ -7,11 +7,10 @@ type SupabaseLikeError = {
   details?: string | null;
 };
 
-export async function POST(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+type Params = { id: string };
+
+export async function POST(_req: Request, { params }: { params: Params }) {
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -19,21 +18,23 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch the original quote (RLS ensures it must belong to user)
+  // Fetch original quote (defense-in-depth: filter by user_id too)
   const { data: original, error: fetchErr } = await supabase
     .from("quotes")
     .select(
       "trade, customer_name, customer_address, inputs_json, selections_json, line_items_json, pricing_json, payload, subtotal, tax, total"
     )
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (fetchErr || !original) {
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  // Create a new quote as a draft copy
   const insertPayload = {
+    user_id: auth.user.id,
+
     trade: original.trade ?? "roofing",
     customer_name: original.customer_name ?? "",
     customer_address: original.customer_address ?? null,
@@ -50,16 +51,13 @@ export async function POST(
 
     status: "draft",
     locked: false,
-
-    // explicitly set for safety
-    user_id: auth.user.id,
-  };
+  } satisfies Record<string, unknown>;
 
   const { data: created, error: insertErr } = await supabase
     .from("quotes")
     .insert(insertPayload)
     .select("id")
-    .single();
+    .single<{ id: string }>();
 
   if (insertErr || !created) {
     const e = insertErr as unknown as SupabaseLikeError;
@@ -77,5 +75,6 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ ok: true, id: created.id }, { status: 201 });
+  // ✅ Keep response exactly what the client needs
+  return NextResponse.json({ id: created.id }, { status: 201 });
 }

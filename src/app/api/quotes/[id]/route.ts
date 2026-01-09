@@ -6,12 +6,6 @@ import { calculateRoofingQuote } from "@/trades/roofing/pricing";
 import type { SavedCustomItem } from "@/trades/roofing/pricing";
 import type { JsonObject, JsonValue } from "@/lib/types/json";
 
-/**
- * 🔥 IMPORTANT (ONE-LINE FIX)
- * Replace this import with the REAL one used in your repo.
- * Search: rg "loadRoofingRateCardForUser" -n src
- * Copy the working import line here.
- */
 import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
 
 type Params = { id: string };
@@ -51,8 +45,8 @@ function getNumber(v: unknown, fallback = 0): number {
 }
 
 // GET /api/quotes/:id (private)
-export async function GET(_req: Request, { params }: { params: Promise<Params> }) {
-  const { id } = await params;
+export async function GET(_req: Request, { params }: { params: Params }) {
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -64,6 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<Params> }
       "id, trade, customer_name, customer_address, inputs_json, selections_json, line_items_json, pricing_json, payload, subtotal, tax, total, status, share_token, created_at"
     )
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single<QuoteRow>();
 
   if (error || !quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
@@ -71,18 +66,19 @@ export async function GET(_req: Request, { params }: { params: Promise<Params> }
 }
 
 // PATCH /api/quotes/:id (private) — expects FULL RoofingNewQuoteSchema payload
-export async function PATCH(req: Request, { params }: { params: Promise<Params> }) {
-  const { id } = await params;
+export async function PATCH(req: Request, { params }: { params: Params }) {
+  const { id } = params;
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Ensure exists (RLS enforces ownership)
+  // Ensure exists + owned (do not rely only on RLS)
   const { data: exists, error: fetchErr } = await supabase
     .from("quotes")
     .select("id")
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single<{ id: string }>();
 
   if (fetchErr || !exists) return NextResponse.json({ error: "Quote not found" }, { status: 404 });
@@ -90,7 +86,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<Params> 
   const body: unknown = await req.json();
   const parsed = RoofingNewQuoteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid quote payload" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid quote payload", issues: parsed.error.flatten() }, { status: 400 });
   }
 
   const args = parsed.data;
@@ -98,6 +94,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<Params> 
   // Canonical loader (DO NOT BREAK)
   const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
 
+  // TODO (recommended): load selected custom items like POST does,
+  // so edits/recacls include custom item pricing. Leaving empty keeps behavior consistent with your current file.
   const savedCustomItems: SavedCustomItem[] = [];
 
   const computed = calculateRoofingQuote({
@@ -132,6 +130,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<Params> 
       total,
     })
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .select(
       "id, trade, customer_name, customer_address, inputs_json, selections_json, line_items_json, pricing_json, payload, subtotal, tax, total, status, share_token, created_at"
     )

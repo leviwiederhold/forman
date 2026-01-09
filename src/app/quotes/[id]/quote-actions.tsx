@@ -27,9 +27,7 @@ export function QuoteActions({ id, customerName, total, shareToken }: Props) {
       return;
     }
 
-    // ✅ absolute URL + correct share route
     const url = new URL(`/quotes/share/${shareToken}`, window.location.origin).toString();
-
     await navigator.clipboard.writeText(url);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
@@ -54,16 +52,15 @@ export function QuoteActions({ id, customerName, total, shareToken }: Props) {
 
   async function onDuplicate() {
     const res = await fetch(`/api/quotes/${id}/duplicate`, { method: "POST" });
-    if (!res.ok) {
-      alert("Duplicate failed.");
+    const json = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+
+    if (!res.ok || !json.id) {
+      alert(json.error ?? "Duplicate failed.");
       return;
     }
 
-    // If your API returns JSON with new id, handle it:
-    // const json = (await res.json()) as { id?: string };
-    // if (json.id) router.push(`/quotes/${json.id}`);
-
-    router.refresh();
+    // ✅ Go to the newly created quote
+    router.push(`/quotes/${json.id}`);
   }
 
   return (
