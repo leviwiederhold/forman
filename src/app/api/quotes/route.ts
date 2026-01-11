@@ -7,6 +7,7 @@ import type { SavedCustomItem } from "@/trades/roofing/pricing";
 import type { JsonObject, JsonValue } from "@/lib/types/json";
 
 import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
+import { getEntitlements } from "@/lib/billing/entitlements";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -41,6 +42,11 @@ export async function GET() {
   if (!auth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const ent = await getEntitlements();
+if (!ent.canCreateQuotes) {
+  return NextResponse.json({ error: "Subscription required" }, { status: 402 });
+}
+
 
   const { data, error } = await supabase
     .from("quotes")

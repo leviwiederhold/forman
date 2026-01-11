@@ -11,6 +11,8 @@ import {
 } from "@/trades/roofing/rates.server";
 
 import type { SavedCustomItem } from "@/trades/roofing/pricing";
+import { getEntitlements } from "@/lib/billing/entitlements";
+
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,9 @@ export default async function NewQuotePage() {
 
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
+
+  const ent = await getEntitlements();
+if (!ent.canCreateQuotes) redirect("/billing");
 
   let rateCard: RoofingRateCard;
 
