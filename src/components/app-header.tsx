@@ -11,7 +11,6 @@ const NAV = [
   { href: "/settings/roofing", label: "Settings" },
 ];
 
-
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(href + "/");
@@ -29,13 +28,14 @@ export default function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+      {/* top row */}
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="text-sm font-medium tracking-wide">
             Forman
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -63,8 +63,8 @@ export default function AppHeader() {
         </form>
       </div>
 
-      {/* mobile */}
-      <div className="md:hidden border-t">
+      {/* mobile nav */}
+      <div className="border-t md:hidden">
         <div className="mx-auto flex max-w-6xl gap-1 px-2 py-2">
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
