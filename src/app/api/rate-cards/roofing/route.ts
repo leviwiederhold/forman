@@ -70,54 +70,32 @@ export async function PUT(req: Request) {
     );
   }
 
-  // ✅ Find latest rate card for this user + trade (no fragile name matching)
-  const { data: existing, error: existingErr } = await supabase
+  // ✅ Canonical, non-fragile save: UPSERT on (user_id, trade)
+  // Requires a UNIQUE constraint or unique index on (user_id, trade)
+  const { data: saved, error } = await supabase
     .from("rate_cards")
-    .select("id")
-    .eq("user_id", auth.user.id)
-    .eq("trade", TRADE)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existingErr) {
-    return NextResponse.json({ error: existingErr.message }, { status: 500 });
-  }
-
-  if (!existing) {
-    const { data: inserted, error } = await supabase
-      .from("rate_cards")
-      .insert({
+    .upsert(
+      {
         user_id: auth.user.id,
         trade: TRADE,
         name: DEFAULT_NAME,
         currency: "USD",
         rates_json: parsed.data,
-      })
-      .select("id, updated_at")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true, id: inserted.id, saved: "inserted" });
-  }
-
-  const { data: updated, error } = await supabase
-    .from("rate_cards")
-    .update({
-      rates_json: parsed.data,
-      currency: "USD",
-      name: DEFAULT_NAME,
-    })
-    .eq("id", existing.id)
+      },
+      { onConflict: "user_id,trade" }
+    )
     .select("id, updated_at")
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !saved) {
+    return NextResponse.json(
+      {
+        error: "Failed to save rate card",
+        supabase: { message: error?.message ?? "unknown" },
+      },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ ok: true, id: updated.id, saved: "updated" });
+  return NextResponse.json({ ok: true, id: saved.id, updated_at: saved.updated_at });
 }

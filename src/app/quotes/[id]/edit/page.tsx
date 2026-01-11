@@ -8,24 +8,62 @@ import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
 import { RoofingNewQuoteSchema, type RoofingNewQuote } from "@/trades/roofing/schema";
 import type { SavedCustomItem } from "@/trades/roofing/pricing";
 
+export const dynamic = "force-dynamic";
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
+type PageProps = { params: Promise<{ id: string }> };
 
 export default async function QuoteEditPage({ params }: PageProps) {
   const { id } = await params;
+
 
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+  let rateCard: Awaited<ReturnType<typeof loadRoofingRateCardForUser>>;
+
+  try {
+    // Canonical loader (DO NOT BREAK)
+    rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+  } catch (err) {
+    // Fail loudly, but don’t crash the whole app
+    return (
+      <main className="mx-auto max-w-4xl space-y-6 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <Link href={`/quotes/${id}`}>
+            <Button variant="outline">← Back</Button>
+          </Link>
+          <div className="text-sm text-foreground/60">Edit Quote</div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-5">
+          <h1 className="text-base font-medium">Roofing rates not set</h1>
+          <p className="mt-2 text-sm text-foreground/70">
+            You don’t have a valid Roofing rate card yet. Go to Settings → Roofing, enter your rates, and hit Save.
+          </p>
+
+          <div className="mt-4 flex gap-2">
+            <Link href="/settings/roofing">
+              <Button>Go to Roofing Settings</Button>
+            </Link>
+            <Link href={`/quotes/${id}`}>
+              <Button variant="outline">Back to Quote</Button>
+            </Link>
+          </div>
+
+          <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-foreground/70">
+            {String(err)}
+          </pre>
+        </div>
+      </main>
+    );
+  }
 
   const { data: quote, error } = await supabase
     .from("quotes")
     .select("id, trade, inputs_json, selections_json")
     .eq("id", id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (error || !quote) redirect("/quotes");

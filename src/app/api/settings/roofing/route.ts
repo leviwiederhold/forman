@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RoofingRateCardSchema } from "@/trades/roofing/schema";
 
+const TRADE = "roofing";
+const DEFAULT_NAME = "Default Roofing Rate Card";
+
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
 
@@ -22,15 +25,24 @@ export async function POST(req: Request) {
 
   const rates = parsed.data;
 
-  const { error } = await supabase.from("rate_cards").insert({
-    user_id: auth.user.id,
-    trade: "roofing",
-    rates_json: rates,
-  });
+  // Keep this legacy endpoint working by delegating to the canonical UPSERT strategy.
+  // Requires UNIQUE (user_id, trade) on rate_cards.
+  const { error } = await supabase
+    .from("rate_cards")
+    .upsert(
+      {
+        user_id: auth.user.id,
+        trade: TRADE,
+        name: DEFAULT_NAME,
+        currency: "USD",
+        rates_json: rates,
+      },
+      { onConflict: "user_id,trade" }
+    );
 
   if (error) {
     return NextResponse.json(
-      { error: "Failed to save rate card" },
+      { error: "Failed to save rate card", supabase: { message: error.message } },
       { status: 500 }
     );
   }

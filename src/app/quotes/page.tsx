@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import QuotesListClient from "./quotes-list-client";
+
 export const dynamic = "force-dynamic";
 
 type QuoteRow = {
@@ -20,15 +21,25 @@ export default async function QuotesPage() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const { data: quotes } = await supabase
-  .from("quotes")
-  .select("id, trade, created_at, customer_name, status, total")
-  .eq("user_id", auth.user.id)
-  .order("created_at", { ascending: false })
-  .limit(200);
+  const { data: quotes, error } = await supabase
+    .from("quotes")
+    .select("id, trade, created_at, customer_name, status, total")
+    .eq("user_id", auth.user.id)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
+  if (error) {
+    console.error("Failed to load quotes:", error.message);
+  }
 
-  const rows: QuoteRow[] = (quotes ?? []) as QuoteRow[];
+  const rows: QuoteRow[] = (quotes ?? []).map((q) => ({
+    id: q.id,
+    trade: q.trade,
+    created_at: q.created_at,
+    customer_name: q.customer_name,
+    status: q.status,
+    total: q.total,
+  }));
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
@@ -43,7 +54,7 @@ export default async function QuotesPage() {
         </Link>
       </div>
 
-      <QuotesListClient initialQuotes={rows} />
+      <QuotesListClient rows={rows} />
     </main>
   );
 }

@@ -1,56 +1,40 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { z } from "zod";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const BodySchema = z.object({
-  action: z.enum(["accept", "reject"]),
-});
+type Body = { action?: unknown };
 
-export async function POST(
-  req: NextRequest,
-  ctx: { params: Promise<{ token: string }> }
-) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
 
-  const raw = await req.json().catch(() => null);
-  const parsed = BodySchema.safeParse(raw);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
+  let body: Body = {};
+  try {
+    body = (await req.json()) as Body;
+  } catch {}
 
-  const status = parsed.data.action === "accept" ? "accepted" : "rejected";
+  const action = body.action === "accept" || body.action === "reject" ? body.action : null;
+  if (!action) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          "x-share-token": token,
-        },
-      },
-    }
-  );
+  const supabase = createSupabaseAdminClient();
+  const now = new Date().toISOString();
 
-  const patch =
-    status === "accepted"
-      ? { status: "accepted", accepted_at: new Date().toISOString(), rejected_at: null }
-      : { status: "rejected", rejected_at: new Date().toISOString(), accepted_at: null };
+  const update =
+    action === "accept"
+      ? { status: "accepted", accepted_at: now, rejected_at: null }
+      : { status: "rejected", rejected_at: now, accepted_at: null };
 
+  // Only allow first response
   const { data, error } = await supabase
     .from("quotes")
-    .update(patch)
+    .update(update)
     .eq("share_token", token)
-    .not("status", "in", '("accepted","rejected")')
-    .select("id,status,accepted_at,rejected_at")
-    .single();
+    .not("status", "in", "(accepted,rejected)")
+    .select("id,status")
+    .maybeSingle();
 
-  if (error || !data) {
-    return NextResponse.json(
-      { error: error?.message ?? "Unable to update quote status" },
-      { status: 400 }
-    );
+  if (error) {
+    return NextResponse.json({ error: "Failed to respond", supabase: { message: error.message } }, { status: 500 });
   }
+  if (!data) return NextResponse.json({ error: "Already responded or not found" }, { status: 409 });
 
-  return NextResponse.json({ ok: true, quote: data });
+  return NextResponse.json({ ok: true, id: data.id, status: data.status }, { status: 200 });
 }
