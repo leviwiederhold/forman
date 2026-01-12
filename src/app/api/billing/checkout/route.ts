@@ -72,15 +72,17 @@ export async function POST() {
     }
 
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: {
-        metadata: { user_id: auth.user.id },
-      },
-      success_url: `${siteUrl}/quotes?checkout=success`,
-      cancel_url: `${siteUrl}/billing?checkout=cancel`,
-    });
+  mode: "subscription",
+  customer: customerId,
+  line_items: [{ price: priceId, quantity: 1 }],
+  subscription_data: {
+    trial_period_days: 7,
+    metadata: { user_id: auth.user.id },
+  },
+  success_url: `${siteUrl}/quotes?checkout=success`,
+  cancel_url: `${siteUrl}/billing?checkout=cancel`,
+});
+
 
     if (!session.url) {
       return NextResponse.json({ error: "Stripe session missing URL" }, { status: 500 });
