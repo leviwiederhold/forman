@@ -1,8 +1,17 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
+
+// If someone hits this URL directly in the browser, send them back to Billing.
+// (Prevents confusing HTTP 405)
+export async function GET() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://forman-u4mc.vercel.app";
+  return NextResponse.redirect(new URL("/billing", siteUrl), { status: 303 });
+}
 
 export async function POST() {
   try {
@@ -10,13 +19,21 @@ export async function POST() {
     const priceId = process.env.STRIPE_PRICE_ID;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-    if (!secret) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
-    if (!priceId) return NextResponse.json({ error: "Missing STRIPE_PRICE_ID" }, { status: 500 });
-    if (!siteUrl) return NextResponse.json({ error: "Missing NEXT_PUBLIC_SITE_URL" }, { status: 500 });
+    if (!secret) {
+      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+    }
+    if (!priceId) {
+      return NextResponse.json({ error: "Missing STRIPE_PRICE_ID" }, { status: 500 });
+    }
+    if (!siteUrl) {
+      return NextResponse.json({ error: "Missing NEXT_PUBLIC_SITE_URL" }, { status: 500 });
+    }
 
     const supabase = await createSupabaseServerClient();
     const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Look for existing Stripe customer
     const { data: existing, error: fetchErr } = await supabase
@@ -36,6 +53,7 @@ export async function POST() {
         email: auth.user.email ?? undefined,
         metadata: { user_id: auth.user.id },
       });
+
       customerId = customer.id;
 
       const { error: upsertErr } = await supabase
@@ -53,7 +71,6 @@ export async function POST() {
       }
     }
 
-    // No-card trial model: subscription starts when they complete Checkout (no Stripe trial)
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -71,7 +88,6 @@ export async function POST() {
 
     return NextResponse.redirect(session.url, { status: 303 });
   } catch (e) {
-    // This will show you the real error in Vercel Logs
     console.error("Checkout error:", e);
     return NextResponse.json(
       { error: "Checkout failed", details: e instanceof Error ? e.message : String(e) },

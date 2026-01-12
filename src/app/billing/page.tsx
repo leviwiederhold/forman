@@ -24,8 +24,9 @@ export default async function BillingPage() {
         <div className="text-sm text-foreground/70">Cancel anytime.</div>
 
         <form action="/api/billing/checkout" method="post">
-          <Button type="submit">Subscribe</Button>
-        </form>
+  <Button type="submit">Subscribe</Button>
+</form>
+
 
         {ent.subActive && (
           <form action="/api/billing/portal" method="post">
