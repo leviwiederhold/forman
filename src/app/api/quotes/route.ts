@@ -7,7 +7,7 @@ import type { SavedCustomItem } from "@/trades/roofing/pricing";
 import type { JsonObject, JsonValue } from "@/lib/types/json";
 
 import { loadRoofingRateCardForUser } from "@/trades/roofing/rates.server";
-import { getEntitlements } from "@/lib/billing/entitlements";
+import { getEntitlements } from "@/lib/billing/entitlements.server";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -35,18 +35,35 @@ function randomToken(len = 22): string {
   return out;
 }
 
+// Basic CSRF-ish protection for cookie-auth POSTs.
+// Ensures Origin host matches Host (works for browser requests).
+function assertSameOrigin(req: Request): NextResponse | null {
+  const origin = req.headers.get("origin");
+  const host = req.headers.get("host");
+
+  // If Origin is missing (some tools), allow.
+  if (!origin || !host) return null;
+
+  try {
+    const o = new URL(origin);
+    if (o.host !== host) {
+      return NextResponse.json({ error: "Bad origin" }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Bad origin" }, { status: 403 });
+  }
+
+  return null;
+}
+
 // GET /api/quotes -> list latest quotes (private)
+// NOTE: not paywalled (users can browse)
 export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const ent = await getEntitlements();
-if (!ent.canCreateQuotes) {
-  return NextResponse.json({ error: "Subscription required" }, { status: 402 });
-}
-
 
   const { data, error } = await supabase
     .from("quotes")
@@ -60,12 +77,29 @@ if (!ent.canCreateQuotes) {
 }
 
 // POST /api/quotes -> create quote (private, server authoritative)
+// NOTE: paywalled (trial/paid required)
 export async function POST(req: Request) {
+  // ✅ Basic same-origin guard (helps prevent CSRF with cookie auth)
+  const originGuard = assertSameOrigin(req);
+  if (originGuard) return originGuard;
+
   const supabase = await createSupabaseServerClient();
 
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ✅ DEV billing bypass (set FORMAN_BYPASS_BILLING=true in .env.local)
+  const bypassBilling = process.env.FORMAN_BYPASS_BILLING === "true";
+
+  // ✅ Paywall check belongs INSIDE POST
+  const ent = await getEntitlements();
+  if (!bypassBilling && !ent.canCreateQuotes) {
+    return NextResponse.json(
+      { error: "Trial ended. Subscribe to continue." },
+      { status: 402 }
+    );
   }
 
   const body: unknown = await req.json();
@@ -79,10 +113,18 @@ export async function POST(req: Request) {
 
   const args = parsed.data;
 
-  // Canonical loader (DO NOT BREAK)
-  const rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+  // Canonical loader (DO NOT BREAK) — but return a clean error if missing
+  let rateCard;
+  try {
+    rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+  } catch {
+    return NextResponse.json(
+      { error: "Roofing rates not configured. Go to Settings → Roofing." },
+      { status: 409 }
+    );
+  }
 
-  // ✅ Load active custom items for this user + trade
+  // Load active custom items for this user + trade
   const { data: allCustomItems, error: ciErr } = await supabase
     .from("custom_items")
     .select("id, name, pricing_type, unit_label, unit_price, taxable")
@@ -102,7 +144,6 @@ export async function POST(req: Request) {
 
   const selectedSet = new Set(selectedIds);
 
-  // Map custom_items rows into the SavedCustomItem shape expected by pricing
   const savedCustomItems: SavedCustomItem[] = (allCustomItems ?? [])
     .filter((row) => selectedSet.has(row.id))
     .map((row) => ({
@@ -114,21 +155,28 @@ export async function POST(req: Request) {
       taxable: row.taxable,
     }));
 
-  const computed = calculateRoofingQuote({
-    args,
-    rateCard,
-    savedCustomItems,
-  });
+  // Pricing calc should never crash the route
+  let computed: unknown;
+  try {
+    computed = calculateRoofingQuote({
+      args,
+      rateCard,
+      savedCustomItems,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Pricing calculation failed. Check inputs and rates." },
+      { status: 422 }
+    );
+  }
 
-  const computedU: unknown = computed;
-  const computedR: Record<string, unknown> = isRecord(computedU) ? computedU : {};
+  const computedR: Record<string, unknown> = isRecord(computed) ? computed : {};
 
   const lineItems = computedR["line_items"];
   const subtotal = getNumber(computedR["subtotal"], 0);
   const total = getNumber(computedR["total"], subtotal);
   const tax = getNumber(computedR["tax"], 0);
 
-  // Persist a stable pricing snapshot for list/detail/share/PDF
   const pricing_json: JsonObject = {
     subtotal,
     tax,
@@ -139,9 +187,7 @@ export async function POST(req: Request) {
     total_before_minimum: getNumber(computedR["total_before_minimum"], 0),
   };
 
-  // payload reserved for future use; keep but don't rely on it
   const payload = asJsonObject(computedR["payload"] ?? {});
-
   const share_token = randomToken();
 
   const insertPayload = {
@@ -161,7 +207,6 @@ export async function POST(req: Request) {
     share_token,
   } satisfies Record<string, unknown>;
 
-  // ✅ ACTUAL INSERT (you were missing this)
   const { data: created, error: insertErr } = await supabase
     .from("quotes")
     .insert(insertPayload)

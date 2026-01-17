@@ -8,7 +8,6 @@ import { QuoteActions } from "./quote-actions";
 
 export const dynamic = "force-dynamic";
 
-
 type QuoteView = {
   id: string;
   trade: string;
@@ -20,9 +19,10 @@ type QuoteView = {
   total: number | null;
   line_items_json: JsonValue | null;
   created_at: string | null;
-
-  // ✅ ADD THIS
   share_token: string | null;
+
+  // ✅ Profit guardrails persisted
+  low_margin_acknowledged_at: string | null;
 };
 
 type PageProps = {
@@ -34,8 +34,8 @@ function asArray(v: JsonValue | null): unknown[] {
 }
 
 function money(n: number | null | undefined) {
-  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
-  return `$${v.toFixed(2)}`;
+  const val = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return `$${val.toFixed(2)}`;
 }
 
 export default async function QuoteDetailPage({ params }: PageProps) {
@@ -45,13 +45,17 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const { data: quote, error } = await supabase
-  .from("quotes")
-  .select("id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, share_token")
-  .eq("id", id)
-  .eq("user_id", auth.user.id)
-  .single<QuoteView>();
+  // ✅ Email verification required (launch hardening)
+  if (!auth.user.email_confirmed_at) redirect("/verify-email");
 
+  const { data: quote, error } = await supabase
+    .from("quotes")
+    .select(
+      "id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, share_token, low_margin_acknowledged_at"
+    )
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .single<QuoteView>();
 
   if (error || !quote) redirect("/quotes");
 
@@ -60,9 +64,9 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/quotes">
-          <Button variant="outline">← Back</Button>
-        </Link>
+        <Button asChild variant="outline">
+          <Link href="/quotes">← Back</Link>
+        </Button>
         <div className="text-sm text-foreground/60">Quote</div>
       </div>
 
@@ -74,7 +78,9 @@ export default async function QuoteDetailPage({ params }: PageProps) {
             </div>
             <div className="text-xs text-foreground/60">
               {quote.trade} · {quote.status ?? "draft"}
-              {quote.created_at ? ` · ${new Date(quote.created_at).toLocaleString()}` : ""}
+              {quote.created_at
+                ? ` · ${new Date(quote.created_at).toLocaleString()}`
+                : ""}
             </div>
           </div>
 
@@ -88,9 +94,10 @@ export default async function QuoteDetailPage({ params }: PageProps) {
           <QuoteActions
             id={quote.id}
             customerName={quote.customer_name ?? ""}
+            subtotal={quote.subtotal ?? 0}
             total={quote.total ?? 0}
-            // ✅ PASS share token down to Copy Link / Email
             shareToken={quote.share_token ?? ""}
+            acknowledgedAt={quote.low_margin_acknowledged_at}
           />
         </div>
       </div>
@@ -127,10 +134,13 @@ export default async function QuoteDetailPage({ params }: PageProps) {
                 const qty = obj.quantity ?? obj.qty ?? "";
                 const unit = obj.unit ?? "";
                 const unitPrice = Number(obj.unit_price ?? obj.price ?? 0);
-                const subtotal = Number(obj.subtotal ?? obj.amount ?? 0);
+                const itemSubtotal = Number(obj.subtotal ?? obj.amount ?? 0);
 
                 return (
-                  <div key={idx} className="flex items-start justify-between gap-3">
+                  <div
+                    key={idx}
+                    className="flex items-start justify-between gap-3"
+                  >
                     <div className="min-w-0">
                       <div className="truncate text-foreground/80">{name}</div>
                       <div className="text-xs text-foreground/60">
@@ -138,7 +148,9 @@ export default async function QuoteDetailPage({ params }: PageProps) {
                         {qty ? ` × $${unitPrice.toFixed(2)}` : ""}
                       </div>
                     </div>
-                    <div className="text-foreground/80">${subtotal.toFixed(2)}</div>
+                    <div className="text-foreground/80">
+                      ${itemSubtotal.toFixed(2)}
+                    </div>
                   </div>
                 );
               })}

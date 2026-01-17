@@ -7,11 +7,21 @@ function isPublicPath(pathname: string) {
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
+    pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/quotes/share/") ||
     pathname.startsWith("/feedback") ||
     pathname.startsWith("/api/feedback") ||
     pathname.startsWith("/api/quotes/share/")
+  );
+}
+
+function isEmailVerificationBypassPath(pathname: string) {
+  // paths a logged-in-but-unverified user must still access
+  return (
+    pathname.startsWith("/verify-email") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/") // allow APIs required by auth flows (optional, safer)
   );
 }
 
@@ -53,10 +63,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // ✅ Email verification enforcement (launch hardening)
+  // If the user's email isn't confirmed, force them to /verify-email
+  // BUT allow share routes + auth routes + verify-email itself.
+  const emailConfirmed = Boolean(data.user.email_confirmed_at);
+
+  if (!emailConfirmed && !isEmailVerificationBypassPath(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/verify-email";
+    url.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(url);
+  }
+
   return res;
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-

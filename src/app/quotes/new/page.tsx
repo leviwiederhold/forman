@@ -11,11 +11,9 @@ import {
 } from "@/trades/roofing/rates.server";
 
 import type { SavedCustomItem } from "@/trades/roofing/pricing";
-import { getEntitlements } from "@/lib/billing/entitlements";
-
+import { getEntitlements } from "@/lib/billing/entitlements.server";
 
 export const dynamic = "force-dynamic";
-
 
 // Helper to infer async return types cleanly
 type AwaitedReturn<T extends (...args: never[]) => Promise<unknown>> = Awaited<
@@ -31,50 +29,52 @@ export default async function NewQuotePage() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
+  // ✅ DEV billing bypass (set FORMAN_BYPASS_BILLING=true in .env.local)
+  const bypassBilling = process.env.FORMAN_BYPASS_BILLING === "true";
+
+  // ✅ Paywall check INSIDE the page function
   const ent = await getEntitlements();
-if (!ent.canCreateQuotes) redirect("/billing");
+  if (!bypassBilling && !ent.canCreateQuotes) redirect("/billing");
 
   let rateCard: RoofingRateCard;
 
-try {
-  // Canonical loader (DO NOT BREAK)
-  rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
-} catch (err) {
-  // Fail loudly, but don’t crash the whole app
-  return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
-      <div className="flex items-center justify-between gap-3">
-        <Link href="/quotes">
-          <Button variant="outline">← Back</Button>
-        </Link>
-        <div className="text-sm text-foreground/60">New Quote</div>
-      </div>
-
-      <div className="rounded-2xl border bg-card p-5">
-        <h1 className="text-base font-medium">Roofing rates not set</h1>
-        <p className="mt-2 text-sm text-foreground/70">
-          You don’t have a valid Roofing rate card yet. Go to Settings → Roofing, enter your rates, and hit Save.
-        </p>
-
-        <div className="mt-4 flex gap-2">
-          <Link href="/settings/roofing">
-            <Button>Go to Roofing Settings</Button>
-          </Link>
-          <Link href="/quotes">
-            <Button variant="outline">Back to Quotes</Button>
-          </Link>
+  try {
+    // Canonical loader (DO NOT BREAK)
+    rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
+  } catch (err) {
+    return (
+      <main className="mx-auto max-w-4xl space-y-6 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <Button asChild variant="outline">
+            <Link href="/quotes">← Back</Link>
+          </Button>
+          <div className="text-sm text-foreground/60">New Quote</div>
         </div>
 
-        {/* Optional: show the actual error so it’s “loud” */}
-        <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-foreground/70">
-          {String(err)}
-        </pre>
-      </div>
-    </main>
-  );
-}
+        <div className="rounded-2xl border bg-card p-5">
+          <h1 className="text-base font-medium">Roofing rates not set</h1>
+          <p className="mt-2 text-sm text-foreground/70">
+            You don’t have a valid Roofing rate card yet. Go to Settings → Roofing,
+            enter your rates, and hit Save.
+          </p>
 
-  // ✅ IMPORTANT: This table is "custom_items" (your DB does not have saved_custom_items)
+          <div className="mt-4 flex gap-2">
+            <Button asChild>
+              <Link href="/settings/roofing">Go to Roofing Settings</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/quotes">Back to Quotes</Link>
+            </Button>
+          </div>
+
+          <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-foreground/70">
+            {String(err)}
+          </pre>
+        </div>
+      </main>
+    );
+  }
+
   const { data: savedItems } = await supabase
     .from("custom_items")
     .select(
@@ -97,9 +97,6 @@ try {
     .eq("is_active", true)
     .order("updated_at", { ascending: false });
 
-  // Your NewQuoteClient expects SavedCustomItem[].
-  // We'll cast from custom_items rows to the same shape it needs.
-  // (If you want, we can later rename this type to CustomItem and remove casting.)
   const customItems: SavedCustomItem[] =
     (savedItems ?? []) as unknown as SavedCustomItem[];
 
@@ -108,9 +105,9 @@ try {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/quotes">
-          <Button variant="outline">← Back</Button>
-        </Link>
+        <Button asChild variant="outline">
+          <Link href="/quotes">← Back</Link>
+        </Button>
         <div className="text-sm text-foreground/60">New Quote</div>
       </div>
 

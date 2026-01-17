@@ -1,186 +1,129 @@
-// src/app/quotes/share/[token]/page.tsx
-import { createClient } from "@supabase/supabase-js";
-import ShareRespondButtons from "./share-respond-buttons";
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 
-type PageProps = { params: Promise<{ token: string }> };
+export const dynamic = "force-dynamic";
 
-function money(n: unknown) {
-  const v = Number(n ?? 0);
-  return `$${(Number.isFinite(v) ? v : 0).toFixed(2)}`;
+type QuoteShareView = {
+  id: string;
+  trade: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  status: string | null;
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
+  created_at: string | null;
+  share_token: string | null;
+  low_margin_acknowledged_at: string | null;
+};
+
+type PageProps = {
+  params: Promise<{ token: string }>;
+};
+
+function money(n: number | null | undefined) {
+  const val = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return `$${val.toFixed(2)}`;
 }
 
-function asRecord(v: unknown): Record<string, unknown> {
-  return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
+function marginPct(subtotal: number, total: number) {
+  if (total <= 0) return 0;
+  return ((total - subtotal) / total) * 100;
 }
 
 export default async function QuoteSharePage({ params }: PageProps) {
   const { token } = await params;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          "x-share-token": token,
-        },
-      },
-    }
-  );
+  const supabase = await createSupabaseServerClient();
 
   const { data: quote, error } = await supabase
     .from("quotes")
     .select(
-      `
-      id,
-      customer_name,
-      customer_address,
-      status,
-      subtotal,
-      tax,
-      total,
-      line_items_json,
-      created_at,
-      accepted_at,
-      rejected_at
-    `
+      "id, trade, customer_name, customer_address, status, subtotal, tax, total, created_at, share_token, low_margin_acknowledged_at"
     )
     .eq("share_token", token)
-    .single();
+    .single<QuoteShareView>();
 
-  if (error || !quote) {
+  if (error || !quote) redirect("/");
+
+  // ✅ Server-enforced Profit Guardrail (prevents accidental sharing)
+  const TARGET_MARGIN = 30;
+  const pct = marginPct(quote.subtotal ?? 0, quote.total ?? 0);
+
+  if (pct < TARGET_MARGIN && !quote.low_margin_acknowledged_at) {
+    // Keep it generic; do not leak totals/details
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
-          This quote link is invalid or no longer available.
-        </div>
-      </div>
+      <main className="mx-auto max-w-xl space-y-3 p-6">
+        <h1 className="text-lg font-medium">Quote unavailable</h1>
+        <p className="text-sm text-foreground/70">
+          This quote is not available to view yet. Please contact the contractor.
+        </p>
+      </main>
     );
   }
 
-  const status = String(quote.status ?? "draft");
-  const isFinal = status === "accepted" || status === "rejected";
-
-  const items: unknown[] = Array.isArray(quote.line_items_json) ? quote.line_items_json : [];
-
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        {/* HEADER */}
-        <div className="mb-6">
-          <div className="text-xs uppercase tracking-wider text-white/60">Quote</div>
-
-          <h1 className="mt-1 text-2xl font-light">{quote.customer_name || "Customer"}</h1>
-
-          {quote.customer_address ? (
-            <div className="mt-1 text-sm text-white/70">{quote.customer_address}</div>
-          ) : null}
-
-          <div className="mt-2 text-sm text-white/70">
-            Status: <span className="text-white">{status}</span>
-          </div>
-
-          {isFinal ? (
-            <div className="mt-2 text-xs text-white/60">
-              {status === "accepted" && quote.accepted_at
-                ? `Accepted: ${new Date(quote.accepted_at).toLocaleString()}`
-                : null}
-              {status === "rejected" && quote.rejected_at
-                ? `Rejected: ${new Date(quote.rejected_at).toLocaleString()}`
-                : null}
-            </div>
-          ) : null}
+    <main className="mx-auto max-w-2xl space-y-6 p-6">
+      <div className="rounded-2xl border bg-card p-6">
+        <div className="text-xs text-foreground/60">Quote</div>
+        <div className="mt-1 text-lg font-medium">
+          {quote.customer_name ?? "Customer"}
+        </div>
+        <div className="mt-1 text-sm text-foreground/70">
+          {quote.trade} · {quote.created_at ? new Date(quote.created_at).toLocaleDateString() : ""}
         </div>
 
-        {/* TOTALS */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="flex items-baseline justify-between">
-            <div className="text-sm text-white/70">Total</div>
-            <div className="text-3xl font-light">{money(quote.total)}</div>
+        <div className="mt-6 rounded-xl border p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-foreground/70">Total</span>
+            <span className="text-xl font-medium">{money(quote.total)}</span>
           </div>
-          <div className="mt-2 text-sm text-white/70">
-            Subtotal {money(quote.subtotal)} · Tax {money(quote.tax)}
+          <div className="mt-3 text-xs text-foreground/60">
+            Includes materials & labor. Tax shown if applicable.
           </div>
         </div>
 
-        {/* RESPOND */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">Respond</div>
-
-          <ShareRespondButtons token={token} disabled={isFinal} />
-
-          <div className="mt-3 text-xs text-white/60">
-            {isFinal ? `This quote has already been ${status}.` : "Accepting or rejecting will update the quote status."}
+        <div className="mt-5 space-y-3">
+          <div className="rounded-xl border p-4 text-sm">
+            <div className="font-medium">What’s included</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-foreground/70">
+              <li>Roofing materials & installation</li>
+              <li>Site cleanup</li>
+              <li>Basic warranty (contractor-provided)</li>
+            </ul>
           </div>
-        </div>
 
-        {/* LINE ITEMS (receipt style) */}
-        <div className="mt-8">
-          <div className="mb-3 text-sm uppercase tracking-wider text-white/60">Line items</div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5">
-            {items.length === 0 ? (
-              <div className="p-4 text-white/70">No line items found.</div>
-            ) : (
-              <div className="divide-y divide-white/10">
-                {items.map((it: unknown, idx: number) => {
-                  const obj = asRecord(it);
-
-                  const name = String(obj["name"] ?? obj["label"] ?? `Item ${idx + 1}`);
-
-                  const qtyVal = obj["qty"] ?? obj["quantity"];
-                  const qty =
-                    typeof qtyVal === "number" || typeof qtyVal === "string" ? String(qtyVal) : "";
-
-                  const unit = String(obj["unit"] ?? "");
-
-                  const amount =
-                    obj["subtotal"] ??
-                    obj["total"] ??
-                    obj["amount"] ??
-                    obj["line_total"] ??
-                    obj["extended_price"] ??
-                    0;
-
-                  return (
-                    <div key={`${name}-${idx}`} className="flex items-start justify-between gap-4 px-4 py-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm text-white/90">{name}</div>
-                        {qty ? (
-                          <div className="text-xs text-white/60">
-                            {qty} {unit}
-                          </div>
-                        ) : null}
-                      </div>
-                      <div className="shrink-0 text-sm text-white/90 tabular-nums">
-                        {money(amount)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* receipt footer totals */}
-            <div className="border-t border-white/10 px-4 py-3 text-sm">
-              <div className="flex justify-between text-white/70">
-                <span>Subtotal</span>
-                <span className="tabular-nums">{money(quote.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-white/70">
-                <span>Tax</span>
-                <span className="tabular-nums">{money(quote.tax)}</span>
-              </div>
-              <div className="mt-2 flex justify-between text-white">
-                <span className="text-sm">Total</span>
-                <span className="text-base tabular-nums">{money(quote.total)}</span>
-              </div>
+          <div className="rounded-xl border p-4 text-sm">
+            <div className="font-medium">Estimated timeline</div>
+            <div className="mt-2 text-foreground/70">
+              Most jobs complete in 1–3 days depending on size/weather.
             </div>
           </div>
 
-          <div className="mt-6 text-xs text-white/50">This is a read-only shared link.</div>
+          <div className="rounded-xl border p-4 text-sm">
+            <div className="font-medium">Trust & warranty</div>
+            <div className="mt-2 text-foreground/70">
+              Licensed & insured. Warranty details provided by the contractor.
+            </div>
+          </div>
+        </div>
+
+        <form
+          className="mt-6"
+          action={`/api/quotes/share/${token}/approve`}
+          method="post"
+        >
+          <Button className="w-full">Approve Quote</Button>
+          <div className="mt-2 text-xs text-foreground/60">
+            Approval notifies the contractor. No payment is collected here yet.
+          </div>
+        </form>
+
+        <div className="mt-4 text-xs text-foreground/50">
+          Subtotal: {money(quote.subtotal)} · Tax: {money(quote.tax)}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
