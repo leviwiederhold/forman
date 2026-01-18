@@ -28,9 +28,7 @@ export default async function QuotesPage() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  if (error) {
-    console.error("Failed to load quotes:", error.message);
-  }
+  if (error) console.error("Failed to load quotes:", error.message);
 
   const rows: QuoteRow[] = (quotes ?? []).map((q) => ({
     id: q.id,
@@ -49,9 +47,9 @@ export default async function QuotesPage() {
           <h1 className="text-lg font-light tracking-wide">All quotes</h1>
         </div>
 
-        <Link href="/quotes/new">
-          <Button>New Quote</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/quotes/new">New Quote</Link>
+        </Button>
       </div>
 
       <QuotesListClient rows={rows} />
