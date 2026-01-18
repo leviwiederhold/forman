@@ -8,6 +8,14 @@ function marginPct(subtotal: number, total: number) {
   return ((total - subtotal) / total) * 100;
 }
 
+// If someone visits this URL directly in a browser, avoid a confusing 405 page.
+export async function GET() {
+  return NextResponse.json(
+    { error: "Method Not Allowed. Use POST from the Approve button." },
+    { status: 405 }
+  );
+}
+
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ token: string }> }
@@ -34,6 +42,7 @@ export async function POST(
     );
   }
 
+  // Server-authoritative guardrail
   const TARGET_MARGIN = 30;
   const pct = marginPct(quote.subtotal ?? 0, quote.total ?? 0);
 
@@ -41,7 +50,8 @@ export async function POST(
     return NextResponse.json({ error: "Quote not shareable" }, { status: 409 });
   }
 
-  // ✅ Use a status your enum already supports
+  // ✅ Your enum does NOT allow "approved". Use a value that exists.
+  // Your dashboard already uses "won", so this is safe.
   const { error: updErr } = await supabase
     .from("quotes")
     .update({ status: "won" })
@@ -54,6 +64,7 @@ export async function POST(
     );
   }
 
+  // Redirect back to share page on same origin (works on Vercel)
   const url = new URL(req.url);
   url.pathname = `/quotes/share/${token}`;
   url.search = "approved=1";

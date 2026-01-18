@@ -20,6 +20,7 @@ type QuoteShareView = {
 
 type PageProps = {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function money(n: number | null | undefined) {
@@ -32,8 +33,10 @@ function marginPct(subtotal: number, total: number) {
   return ((total - subtotal) / total) * 100;
 }
 
-export default async function QuoteSharePage({ params }: PageProps) {
+export default async function QuoteSharePage({ params, searchParams }: PageProps) {
   const { token } = await params;
+  const sp = (await searchParams) ?? {};
+  const approved = sp.approved === "1" || (Array.isArray(sp.approved) && sp.approved[0] === "1");
 
   const supabase = await createSupabaseServerClient();
 
@@ -47,12 +50,11 @@ export default async function QuoteSharePage({ params }: PageProps) {
 
   if (error || !quote) redirect("/");
 
-  // ✅ Server-enforced Profit Guardrail (prevents accidental sharing)
+  // Server-enforced Profit Guardrail
   const TARGET_MARGIN = 30;
   const pct = marginPct(quote.subtotal ?? 0, quote.total ?? 0);
 
   if (pct < TARGET_MARGIN && !quote.low_margin_acknowledged_at) {
-    // Keep it generic; do not leak totals/details
     return (
       <main className="mx-auto max-w-xl space-y-3 p-6">
         <h1 className="text-lg font-medium">Quote unavailable</h1>
@@ -66,6 +68,12 @@ export default async function QuoteSharePage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <div className="rounded-2xl border bg-card p-6">
+        {approved ? (
+          <div className="mb-4 rounded-xl border p-3 text-sm">
+            ✅ Approved — the contractor has been notified.
+          </div>
+        ) : null}
+
         <div className="text-xs text-foreground/60">Quote</div>
         <div className="mt-1 text-lg font-medium">
           {quote.customer_name ?? "Customer"}
@@ -114,7 +122,9 @@ export default async function QuoteSharePage({ params }: PageProps) {
           action={`/api/quotes/share/${token}/approve`}
           method="post"
         >
-          <Button className="w-full">Approve Quote</Button>
+          <Button className="w-full" type="submit">
+            Approve Quote
+          </Button>
           <div className="mt-2 text-xs text-foreground/60">
             Approval notifies the contractor. No payment is collected here yet.
           </div>
