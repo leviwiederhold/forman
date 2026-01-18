@@ -1,59 +1,51 @@
-"use client";
-
-import * as React from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function VerifyEmailPage() {
-  const [msg, setMsg] = React.useState<string | null>(null);
-  const [busy, setBusy] = React.useState(false);
+export const dynamic = "force-dynamic";
 
-  async function resend() {
-    setBusy(true);
-    setMsg(null);
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-    // This assumes you already use @supabase/ssr and have env vars set
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+function first(v: string | string[] | undefined) {
+  return Array.isArray(v) ? v[0] : v;
+}
 
-    const { data: userRes } = await supabase.auth.getUser();
-    const email = userRes.user?.email;
-
-    if (!email) {
-      setBusy(false);
-      setMsg("No user email found. Please log in again.");
-      return;
-    }
-
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-    });
-
-    setBusy(false);
-
-    if (error) {
-      setMsg(error.message);
-      return;
-    }
-
-    setMsg("Verification email sent. Check your inbox/spam.");
-  }
+export default async function VerifyEmailPage({ searchParams }: PageProps) {
+  const sp = (await searchParams) ?? {};
+  const redirectTo = first(sp.redirectTo) ?? "/dashboard";
 
   return (
     <main className="mx-auto max-w-lg space-y-4 p-6">
-      <h1 className="text-lg font-medium">Verify your email</h1>
-      <p className="text-sm text-foreground/70">
-        Please verify your email before using Forman. Check your inbox (and spam).
-      </p>
+      <div>
+        <div className="text-sm text-foreground/70">One last step</div>
+        <h1 className="text-lg font-light tracking-wide">Verify your email</h1>
+      </div>
 
-      <Button onClick={resend} disabled={busy}>
-        {busy ? "Sending..." : "Resend verification email"}
-      </Button>
+      <div className="rounded-2xl border bg-card p-4 text-sm text-foreground/70">
+        We sent you a verification email. Open it and click the link to activate
+        your account.
+        <div className="mt-2 text-xs text-foreground/60">
+          Check spam/junk if you don’t see it in 1–2 minutes.
+        </div>
+      </div>
 
-      {msg ? <div className="text-sm text-foreground/70">{msg}</div> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button asChild>
+          <Link href={`/login?redirectTo=${encodeURIComponent(redirectTo)}`}>
+            Go to login
+          </Link>
+        </Button>
+
+        <Button asChild variant="outline">
+          <Link href="/signup">Use a different email</Link>
+        </Button>
+      </div>
+
+      <div className="text-xs text-foreground/50">
+        If you’re testing locally, make sure your Supabase “Site URL” and
+        redirect URLs include your Vercel domain.
+      </div>
     </main>
   );
 }
