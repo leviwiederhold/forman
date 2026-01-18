@@ -8,14 +8,57 @@ function addDays(d: Date, days: number) {
   return out;
 }
 
+function clampInt(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+}
+
+function daysRemaining(endsAtIso: string | null): number | null {
+  if (!endsAtIso) return null;
+  const end = new Date(endsAtIso).getTime();
+  if (!Number.isFinite(end)) return null;
+
+  const now = Date.now();
+  const diffMs = end - now;
+
+  // If expired, show 0
+  if (diffMs <= 0) return 0;
+
+  // ceil so "0.2 days" shows as "1 day left"
+  const d = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return clampInt(d, 0, 3650);
+}
+
+export type BillingAccess =
+  | "active"
+  | "trial"
+  | "expired"
+  | "past_due"
+  | "canceled"
+  | "incomplete"
+  | "unknown";
+
 export type Entitlements = {
-  status: string | null;          // stripe status if subscribed
+  status: string | null; // stripe status if subscribed (raw)
+  access: BillingAccess; // normalized for UI + gating
+
   trialStartedAt: string | null;
   trialEndsAt: string | null;
+  trialDaysRemaining: number | null;
+
   inTrial: boolean;
-  isPaid: boolean;                // active/trialing in Stripe
-  canCreateQuotes: boolean;        // trial OR paid
+  isPaid: boolean; // active/trialing in Stripe
+  canCreateQuotes: boolean; // trial OR paid
 };
+
+function normalizeAccess(status: string | null, inTrial: boolean): BillingAccess {
+  if (status === "active" || status === "trialing") return "active";
+  if (status === "past_due" || status === "unpaid") return "past_due";
+  if (status === "canceled") return "canceled";
+  if (status === "incomplete" || status === "incomplete_expired") return "incomplete";
+  if (inTrial) return "trial";
+  if (status === null) return "expired";
+  return "unknown";
+}
 
 export async function getEntitlements(): Promise<Entitlements> {
   const supabase = await createSupabaseServerClient();
@@ -24,8 +67,10 @@ export async function getEntitlements(): Promise<Entitlements> {
   if (!auth.user) {
     return {
       status: null,
+      access: "expired",
       trialStartedAt: null,
       trialEndsAt: null,
+      trialDaysRemaining: null,
       inTrial: false,
       isPaid: false,
       canCreateQuotes: false,
@@ -49,7 +94,10 @@ export async function getEntitlements(): Promise<Entitlements> {
     .from("profiles")
     .select("trial_started_at, trial_ends_at")
     .eq("id", userId)
-    .maybeSingle<{ trial_started_at: string | null; trial_ends_at: string | null }>();
+    .maybeSingle<{
+      trial_started_at: string | null;
+      trial_ends_at: string | null;
+    }>();
 
   let trialStartedAt = profile?.trial_started_at ?? null;
   let trialEndsAt = profile?.trial_ends_at ?? null;
@@ -63,23 +111,25 @@ export async function getEntitlements(): Promise<Entitlements> {
     trialEndsAt = ends.toISOString();
 
     // Best-effort update (don’t block user if this fails)
-    await supabase
-      .from("profiles")
-      .upsert(
-        { id: userId, trial_started_at: trialStartedAt, trial_ends_at: trialEndsAt },
-        { onConflict: "id" }
-      );
+    await supabase.from("profiles").upsert(
+      { id: userId, trial_started_at: trialStartedAt, trial_ends_at: trialEndsAt },
+      { onConflict: "id" }
+    );
   }
 
-  const inTrial =
-    !!trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
+  const inTrial = !!trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
+  const trialDaysRemaining = daysRemaining(trialEndsAt);
 
   const canCreateQuotes = isPaid || inTrial;
 
+  const access = normalizeAccess(status, inTrial);
+
   return {
     status,
+    access,
     trialStartedAt,
     trialEndsAt,
+    trialDaysRemaining,
     inTrial,
     isPaid,
     canCreateQuotes,
