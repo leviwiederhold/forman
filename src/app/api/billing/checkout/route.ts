@@ -69,7 +69,6 @@ export async function POST() {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 7,
         metadata: { user_id: auth.user.id },
       },
       success_url: `${siteUrl}/quotes?checkout=success`,
