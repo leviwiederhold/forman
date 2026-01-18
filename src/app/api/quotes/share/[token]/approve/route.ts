@@ -14,7 +14,6 @@ export async function POST(
 ) {
   const { token } = await ctx.params;
 
-  // ✅ Use service-role client so public approvals can update safely
   const supabase = createSupabaseAdminClient();
 
   const { data: quote, error } = await supabase
@@ -35,20 +34,17 @@ export async function POST(
     );
   }
 
-  // ✅ Enforce guardrail (server authoritative)
   const TARGET_MARGIN = 30;
   const pct = marginPct(quote.subtotal ?? 0, quote.total ?? 0);
 
   if (pct < TARGET_MARGIN && !quote.low_margin_acknowledged_at) {
-    return NextResponse.json(
-      { error: "Quote not shareable" },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Quote not shareable" }, { status: 409 });
   }
 
+  // ✅ Use a status your enum already supports
   const { error: updErr } = await supabase
     .from("quotes")
-    .update({ status: "approved" })
+    .update({ status: "won" })
     .eq("id", quote.id);
 
   if (updErr) {
@@ -58,7 +54,6 @@ export async function POST(
     );
   }
 
-  // ✅ Redirect back to share page on the same origin (works on Vercel)
   const url = new URL(req.url);
   url.pathname = `/quotes/share/${token}`;
   url.search = "approved=1";
