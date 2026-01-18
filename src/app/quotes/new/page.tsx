@@ -15,12 +15,9 @@ import { getEntitlements } from "@/lib/billing/entitlements.server";
 
 export const dynamic = "force-dynamic";
 
-// Helper to infer async return types cleanly
 type AwaitedReturn<T extends (...args: never[]) => Promise<unknown>> = Awaited<
   ReturnType<T>
 >;
-
-// Canonical roofing rate card type (inferred from loader)
 type RoofingRateCard = AwaitedReturn<typeof loadRoofingRateCardForUser>;
 
 export default async function NewQuotePage() {
@@ -29,42 +26,75 @@ export default async function NewQuotePage() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  // ✅ DEV billing bypass (set FORMAN_BYPASS_BILLING=true in .env.local)
-  const bypassBilling = process.env.FORMAN_BYPASS_BILLING === "true";
-
   // ✅ Paywall check INSIDE the page function
   const ent = await getEntitlements();
-  if (!bypassBilling && !ent.canCreateQuotes) redirect("/billing");
+
+  // ✅ Instead of redirecting to /billing, SHOW A FRIENDLY MESSAGE
+  if (!ent.canCreateQuotes) {
+    return (
+      <main className="mx-auto max-w-3xl space-y-6 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/dashboard">
+            <Button variant="outline">← Back</Button>
+          </Link>
+          <div className="text-sm text-foreground/60">New Quote</div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="text-sm text-foreground/70">Trial ended</div>
+          <h1 className="mt-1 text-lg font-medium">
+            Subscribe to create more quotes
+          </h1>
+
+          <p className="mt-2 text-sm text-foreground/70">
+            Your free trial has ended. To keep creating new quotes, you’ll need
+            to subscribe.
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href="/billing">
+              <Button>View plans</Button>
+            </Link>
+            <Link href="/quotes">
+              <Button variant="outline">View existing quotes</Button>
+            </Link>
+          </div>
+
+          <div className="mt-4 text-xs text-foreground/50">
+            You can still view, share, and download existing quotes.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   let rateCard: RoofingRateCard;
 
   try {
-    // Canonical loader (DO NOT BREAK)
     rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
   } catch (err) {
     return (
       <main className="mx-auto max-w-4xl space-y-6 p-6">
         <div className="flex items-center justify-between gap-3">
-          <Button asChild variant="outline">
-            <Link href="/quotes">← Back</Link>
-          </Button>
+          <Link href="/quotes">
+            <Button variant="outline">← Back</Button>
+          </Link>
           <div className="text-sm text-foreground/60">New Quote</div>
         </div>
 
         <div className="rounded-2xl border bg-card p-5">
           <h1 className="text-base font-medium">Roofing rates not set</h1>
           <p className="mt-2 text-sm text-foreground/70">
-            You don’t have a valid Roofing rate card yet. Go to Settings → Roofing,
-            enter your rates, and hit Save.
+            You don’t have a valid Roofing rate card yet. Go to Settings → Roofing, enter your rates, and hit Save.
           </p>
 
           <div className="mt-4 flex gap-2">
-            <Button asChild>
-              <Link href="/settings/roofing">Go to Roofing Settings</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/quotes">Back to Quotes</Link>
-            </Button>
+            <Link href="/settings/roofing">
+              <Button>Go to Roofing Settings</Button>
+            </Link>
+            <Link href="/quotes">
+              <Button variant="outline">Back to Quotes</Button>
+            </Link>
           </div>
 
           <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-foreground/70">
@@ -105,9 +135,9 @@ export default async function NewQuotePage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <Button asChild variant="outline">
-          <Link href="/quotes">← Back</Link>
-        </Button>
+        <Link href="/quotes">
+          <Button variant="outline">← Back</Button>
+        </Link>
         <div className="text-sm text-foreground/60">New Quote</div>
       </div>
 
