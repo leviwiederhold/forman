@@ -1,59 +1,63 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
-type SignupPageProps = {
-  searchParams?: {
-    error?: string;
-  };
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function SignupPage({ searchParams }: SignupPageProps) {
-  const error =
-    searchParams?.error === "auth"
-      ? "Could not create account."
-      : searchParams?.error === "invalid"
-      ? "Enter a valid email + password."
-      : null;
+function first(v: string | string[] | undefined) {
+  return Array.isArray(v) ? v[0] : v;
+}
+
+export default async function SignupPage({ searchParams }: PageProps) {
+  const sp = (await searchParams) ?? {};
+  const error = first(sp.error);
+  const message = first(sp.message);
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-sm space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-base font-light tracking-wide">Sign up</h1>
-          <p className="text-sm text-foreground/70">Forman Roofing v1</p>
-        </div>
+    <main className="mx-auto max-w-md space-y-6 p-6">
+      <div>
+        <div className="text-sm text-foreground/70">Create account</div>
+        <h1 className="text-lg font-light tracking-wide">Sign up</h1>
+      </div>
 
-        {error ? (
-          <div className="rounded-xl border bg-card p-3 text-sm text-destructive">
-            {error}
+      {error || message ? (
+        <div className="rounded-xl border p-3 text-sm">
+          <div className="font-medium">Signup error</div>
+          <div className="mt-1 text-foreground/70">
+            {message ?? "Something went wrong."}
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        {/* IMPORTANT: method="post" prevents 405 */}
-        <form action="/auth/sign-up" method="post" className="space-y-3">
-          <Input name="email" type="email" placeholder="Email" required />
-          <Input
-            name="password"
-            type="password"
-            placeholder="Password (min 6 chars)"
-            required
-            minLength={6}
-          />
-          <Button type="submit" className="w-full">
-            Create account
-          </Button>
-        </form>
+      <form action="/api/auth/signup" method="post" className="space-y-3">
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          required
+          className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          required
+          className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
+        />
 
-        <p className="text-sm text-foreground/70">
-          Already have an account?{" "}
-          <Link
-            className="text-foreground underline underline-offset-4"
-            href="/login"
-          >
-            Log in
-          </Link>
-        </p>
+        <Button type="submit" className="w-full">
+          Create account
+        </Button>
+      </form>
+
+      <div className="text-sm text-foreground/70">
+        Already have an account?{" "}
+        <Link className="underline" href="/login">
+          Log in
+        </Link>
       </div>
     </main>
   );
