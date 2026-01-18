@@ -1,3 +1,4 @@
+// middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
@@ -12,31 +13,32 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/feedback") ||
     pathname.startsWith("/api/feedback") ||
     pathname.startsWith("/api/quotes/share/") ||
-    pathname.startsWith("/api/auth/") // ✅ allow auth API endpoints
+    pathname.startsWith("/api/auth/") // allow auth endpoints
   );
 }
 
-function isPagePath(pathname: string) {
-  // ✅ Never treat API routes as redirect targets
-  return !pathname.startsWith("/api/");
+function safeRedirectTarget(pathname: string) {
+  // Never redirect a browser to API routes
+  if (!pathname || pathname.startsWith("/api/")) return "/dashboard";
+  // Prevent external redirects
+  if (!pathname.startsWith("/")) return "/dashboard";
+  return pathname;
 }
 
 function isEmailVerificationBypassPath(pathname: string) {
   return (
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/") || // ✅ allow auth endpoints
-    pathname.startsWith("/api/quotes/share/") // ✅ public approve endpoints etc
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/quotes/share/")
   );
 }
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // ✅ Never run auth redirects for API routes (prevents /login?redirectTo=/api/...)
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
+  // ✅ Do not run redirects for API endpoints at all
+  if (pathname.startsWith("/api/")) return NextResponse.next();
 
   // Always allow public routes
   if (isPublicPath(pathname)) return NextResponse.next();
@@ -66,20 +68,17 @@ export async function middleware(req: NextRequest) {
   if (!data.user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-
-    // ✅ only redirect back to real pages
-    if (isPagePath(pathname)) url.searchParams.set("redirectTo", pathname);
-
+    url.searchParams.set("redirectTo", safeRedirectTarget(pathname));
     return NextResponse.redirect(url);
   }
 
+  // Email verification enforcement
   const emailConfirmed = Boolean(data.user.email_confirmed_at);
+
   if (!emailConfirmed && !isEmailVerificationBypassPath(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = "/verify-email";
-
-    if (isPagePath(pathname)) url.searchParams.set("redirectTo", pathname);
-
+    url.searchParams.set("redirectTo", safeRedirectTarget(pathname));
     return NextResponse.redirect(url);
   }
 

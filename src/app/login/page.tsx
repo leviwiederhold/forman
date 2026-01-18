@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loginAction } from "./actions";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
         </div>
       ) : null}
 
-      <form action="/api/auth/login" method="post" className="space-y-3">
+      <form action={loginAction} className="space-y-3">
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <input
