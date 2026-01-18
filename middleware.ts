@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
@@ -12,26 +11,36 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/quotes/share/") ||
     pathname.startsWith("/feedback") ||
     pathname.startsWith("/api/feedback") ||
-    pathname.startsWith("/api/quotes/share/")
+    pathname.startsWith("/api/quotes/share/") ||
+    pathname.startsWith("/api/auth/") // ✅ allow auth API endpoints
   );
 }
 
+function isPagePath(pathname: string) {
+  // ✅ Never treat API routes as redirect targets
+  return !pathname.startsWith("/api/");
+}
+
 function isEmailVerificationBypassPath(pathname: string) {
-  // paths a logged-in-but-unverified user must still access
   return (
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/") // allow APIs required by auth flows (optional, safer)
+    pathname.startsWith("/api/auth/") || // ✅ allow auth endpoints
+    pathname.startsWith("/api/quotes/share/") // ✅ public approve endpoints etc
   );
 }
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
+  // ✅ Never run auth redirects for API routes (prevents /login?redirectTo=/api/...)
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // Always allow public routes
   if (isPublicPath(pathname)) return NextResponse.next();
 
-  // We MUST create a response we can mutate cookies on
   const res = NextResponse.next();
 
   const supabase = createServerClient(
@@ -43,7 +52,6 @@ export async function middleware(req: NextRequest) {
           return req.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // apply cookies to BOTH request (for downstream) and response (for browser)
           cookiesToSet.forEach(({ name, value, options }) => {
             req.cookies.set(name, value);
             res.cookies.set(name, value, options);
@@ -53,25 +61,25 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // ✅ This verifies + refreshes session cookies if needed
   const { data } = await supabase.auth.getUser();
 
   if (!data.user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirectTo", pathname);
+
+    // ✅ only redirect back to real pages
+    if (isPagePath(pathname)) url.searchParams.set("redirectTo", pathname);
+
     return NextResponse.redirect(url);
   }
 
-  // ✅ Email verification enforcement (launch hardening)
-  // If the user's email isn't confirmed, force them to /verify-email
-  // BUT allow share routes + auth routes + verify-email itself.
   const emailConfirmed = Boolean(data.user.email_confirmed_at);
-
   if (!emailConfirmed && !isEmailVerificationBypassPath(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = "/verify-email";
-    url.searchParams.set("redirectTo", pathname);
+
+    if (isPagePath(pathname)) url.searchParams.set("redirectTo", pathname);
+
     return NextResponse.redirect(url);
   }
 
