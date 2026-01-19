@@ -9,6 +9,7 @@ type Ent = {
   trialEndsAt: string | null;
   inTrial: boolean;
   isPaid: boolean;
+  trialDaysRemaining?: number | null;
 };
 
 function fmtDate(iso: string | null) {
@@ -21,20 +22,32 @@ function fmtDate(iso: string | null) {
   });
 }
 
-export function NewQuoteButton({
-  variant,
-  className,
-}: {
+type Props = {
+  /** "nav" makes it look like the header links (text-only) */
+  appearance?: "cta" | "nav";
+  /** only used for appearance="cta" */
   variant?: "default" | "outline";
+  /** only used for appearance="cta" */
+  size?: "default" | "sm";
   className?: string;
-}) {
+  label?: string;
+};
+
+export function NewQuoteButton({
+  appearance = "cta",
+  variant = "default",
+  size = "default",
+  className = "",
+  label = "New Quote",
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
 
-  async function onClick() {
+  async function handleClick() {
+    if (loading) return;
     setLoading(true);
 
-    const res = await fetch("/api/entitlements");
+    const res = await fetch("/api/entitlements", { cache: "no-store" });
     const json = (await res.json().catch(() => ({}))) as { ent?: Ent };
 
     setLoading(false);
@@ -50,25 +63,46 @@ export function NewQuoteButton({
       return;
     }
 
+    const endedText = ent.trialEndsAt
+      ? ` (ended ${fmtDate(ent.trialEndsAt)})`
+      : "";
+
     const ok = window.confirm(
-      `Your free trial has ended${
-        ent.trialEndsAt ? ` (ended ${fmtDate(ent.trialEndsAt)})` : ""
-      }.\n\nSubscribe to create more quotes.`
+      `Subscription required.\n\nYour free trial has ended${endedText}.\nSubscribe to create more quotes.`
     );
 
-    if (ok) {
-      router.push("/billing");
-    }
+    if (ok) router.push("/billing");
   }
 
+  // ✅ Header-style link (text only)
+  if (appearance === "nav") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        className={[
+          "text-sm text-foreground/70 hover:text-foreground transition",
+          "disabled:opacity-60 disabled:cursor-not-allowed",
+          className,
+        ].join(" ")}
+      >
+        {loading ? "Checking…" : label}
+      </button>
+    );
+  }
+
+  // ✅ Normal CTA button for dashboards/pages
   return (
     <Button
-      variant={variant ?? "default"}
-      className={className}
-      onClick={onClick}
+      variant={variant}
+      size={size}
+      onClick={handleClick}
       disabled={loading}
+      type="button"
+      className={className}
     >
-      {loading ? "Checking…" : "New Quote"}
+      {loading ? "Checking…" : label}
     </Button>
   );
 }

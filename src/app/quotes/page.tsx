@@ -1,43 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import QuotesListClient from "./quotes-list-client";
+import { NewQuoteButton } from "@/components/new-quote-button";
 
 export const dynamic = "force-dynamic";
 
-type QuoteRow = {
-  id: string;
-  trade: string | null;
-  created_at: string;
-  customer_name: string | null;
-  status: string | null;
-  total: number | null;
-};
-
 export default async function QuotesPage() {
   const supabase = await createSupabaseServerClient();
-
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  const { data: quotes, error } = await supabase
+  const { data: rows } = await supabase
     .from("quotes")
-    .select("id, trade, created_at, customer_name, status, total")
+    .select("id, trade, customer_name, status, subtotal, tax, total, created_at, pricing_json, inputs_json")
     .eq("user_id", auth.user.id)
     .order("created_at", { ascending: false })
     .limit(200);
-
-  if (error) console.error("Failed to load quotes:", error.message);
-
-  const rows: QuoteRow[] = (quotes ?? []).map((q) => ({
-    id: q.id,
-    trade: q.trade,
-    created_at: q.created_at,
-    customer_name: q.customer_name,
-    status: q.status,
-    total: q.total,
-  }));
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
@@ -47,12 +28,17 @@ export default async function QuotesPage() {
           <h1 className="text-lg font-light tracking-wide">All quotes</h1>
         </div>
 
-        <Button asChild>
-          <Link href="/quotes/new">New Quote</Link>
-        </Button>
+        <div className="flex gap-2">
+          {/* ✅ popup gate */}
+          <NewQuoteButton />
+
+          <Button asChild variant="outline">
+            <Link href="/settings/roofing">Settings</Link>
+          </Button>
+        </div>
       </div>
 
-      <QuotesListClient rows={rows} />
+      <QuotesListClient rows={rows ?? []} />
     </main>
   );
 }

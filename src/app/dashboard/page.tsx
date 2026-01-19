@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { calculateEffectiveMargin } from "@/lib/quotes/margin";
+import { NewQuoteButton } from "@/components/new-quote-button";
 
 export const dynamic = "force-dynamic";
 
@@ -60,13 +61,12 @@ export default async function DashboardPage() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
 
-  // Last 30 days
   const since = new Date();
   since.setDate(since.getDate() - 30);
 
   const { data: recent30 } = await supabase
     .from("quotes")
-    .select("id, trade, created_at, customer_name, status, total, pricing_json")
+    .select("id, trade, created_at, customer_name, status, total, pricing_json, inputs_json")
     .eq("user_id", auth.user.id)
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false })
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   const { data: recent5 } = await supabase
     .from("quotes")
-    .select("id, trade, created_at, customer_name, total")
+    .select("id, trade, created_at, customer_name, total, pricing_json, inputs_json")
     .eq("user_id", auth.user.id)
     .order("created_at", { ascending: false })
     .limit(5);
@@ -124,7 +124,6 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm text-foreground/70">Dashboard</div>
@@ -132,9 +131,8 @@ export default async function DashboardPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button asChild>
-            <Link href="/quotes/new">New Quote</Link>
-          </Button>
+          {/* ✅ popup gate */}
+          <NewQuoteButton />
 
           <Button asChild variant="outline">
             <Link href="/settings/roofing">Settings</Link>
@@ -144,7 +142,6 @@ export default async function DashboardPage() {
 
       <Separator />
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Quoted (30d)" value={fmtMoney(totalQuoted)} />
         <Kpi label="Win rate" value={`${winRate.toFixed(0)}%`} />
@@ -152,7 +149,6 @@ export default async function DashboardPage() {
         <Kpi label="Avg margin" value={`${avgMargin.toFixed(1)}%`} />
       </div>
 
-      {/* Needs Attention */}
       <section className="space-y-3">
         <div>
           <div className="text-sm text-foreground/70">Needs attention</div>
@@ -193,7 +189,6 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Recent Quotes */}
       <section className="space-y-3">
         <div className="text-sm text-foreground/70">Recent quotes</div>
 
@@ -201,9 +196,8 @@ export default async function DashboardPage() {
           <div className="rounded-2xl border bg-card p-6">
             <div className="text-sm">No quotes yet</div>
             <div className="mt-4">
-              <Button asChild>
-                <Link href="/quotes/new">Start New Quote</Link>
-              </Button>
+              {/* ✅ popup gate */}
+              <NewQuoteButton />
             </div>
           </div>
         ) : (
@@ -231,8 +225,6 @@ export default async function DashboardPage() {
     </main>
   );
 }
-
-/* ---------- Small local component ---------- */
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (

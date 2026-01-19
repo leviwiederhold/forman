@@ -19,7 +19,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const url = new URL(req.url);
+  const origin = url.origin;
+
+  // ✅ confirmation link will return to our callback
+  const emailRedirectTo = `${origin}/api/auth/callback?redirectTo=/dashboard`;
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo },
+  });
 
   if (error) {
     return NextResponse.redirect(
@@ -30,6 +40,5 @@ export async function POST(req: Request) {
     );
   }
 
-  // If you require email verification, send them to verify page
   return NextResponse.redirect(new URL("/verify-email", req.url));
 }
