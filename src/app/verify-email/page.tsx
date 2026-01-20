@@ -1,7 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-export const dynamic = "force-dynamic";
 
 type Props = {
   searchParams: Promise<{ email?: string }>;
@@ -13,25 +10,35 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
   return (
     <main className="mx-auto max-w-xl space-y-6 p-6">
       <div>
-        <div className="text-sm text-foreground/70">One last step</div>
+        <div className="text-sm text-foreground/60">One last step</div>
         <h1 className="text-lg font-light tracking-wide">Verify your email</h1>
       </div>
 
       <div className="rounded-2xl border bg-card p-4 text-sm text-foreground/70">
-        We sent you a verification email{email ? ` to ${email}` : ""}. Open it
-        and click the link to activate your account.
+        {email ? (
+          <>We sent a verification email to <span className="text-foreground">{email}</span>. Open it and click the link.</>
+        ) : (
+          <>Check your email for a verification link.</>
+        )}
         <div className="mt-2 text-xs text-foreground/50">
-          Check spam/junk if you don’t see it in 1–2 minutes.
+          If you turned email confirmation off for the demo, you don’t need this screen—just log in.
         </div>
       </div>
 
       <div className="flex gap-2">
-        <Button asChild>
-          <Link href="/login">Go to login</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/signup">Use a different email</Link>
-        </Button>
+        <Link
+          href="/login"
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm text-black"
+        >
+          Go to login
+        </Link>
+
+        <Link
+          href="/signup"
+          className="inline-flex h-10 items-center justify-center rounded-xl border px-4 text-sm"
+        >
+          Use a different email
+        </Link>
       </div>
     </main>
   );
