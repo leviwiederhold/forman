@@ -5,68 +5,74 @@ export const dynamic = "force-dynamic";
 
 function getOrigin(req: Request) {
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const host =
+    req.headers.get("x-forwarded-host") ??
+    req.headers.get("host");
 
   if (host) return `${proto}://${host}`;
   return process.env.NEXT_PUBLIC_SITE_URL ?? "https://forman-u4mc.vercel.app";
 }
 
+export async function GET(req: Request) {
+  // If someone visits the API route directly, just send them to the real page.
+  const origin = getOrigin(req);
+  return NextResponse.redirect(new URL("/signup", origin), 303);
+}
+
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
 
-  const formData = await req.formData();
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  const form = await req.formData();
+  const email = String(form.get("email") ?? "").trim();
+  const password = String(form.get("password") ?? "");
 
-  // 🔒 Guard: required fields
+  const origin = getOrigin(req);
+
   if (!email || !password) {
+    // If a normal browser form POST, redirect back with a message
     const accept = req.headers.get("accept") ?? "";
     if (accept.includes("text/html")) {
-      const origin = getOrigin(req);
-      const url = new URL(`${origin}/signup`);
-      url.searchParams.set("error", "Email and password are required.");
-      return NextResponse.redirect(url, 303);
+      const to = new URL("/signup", origin);
+      to.searchParams.set("error", "auth");
+      to.searchParams.set("message", "Email and password are required.");
+      return NextResponse.redirect(to, 303);
     }
 
+    // For fetch() usage
     return NextResponse.json(
       { error: "Email and password are required." },
       { status: 400 }
     );
   }
 
-  const origin = getOrigin(req);
-
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // ✅ IMPORTANT: send the email link to the callback that exchanges the code
-      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
+      // ✅ IMPORTANT: send them back to YOUR app, not supabase.co/whatever
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   });
 
   if (error) {
     const accept = req.headers.get("accept") ?? "";
     if (accept.includes("text/html")) {
-      const url = new URL(`${origin}/signup`);
-      url.searchParams.set("error", error.message);
-      return NextResponse.redirect(url, 303);
+      const to = new URL("/signup", origin);
+      to.searchParams.set("error", "auth");
+      to.searchParams.set("message", error.message);
+      return NextResponse.redirect(to, 303);
     }
 
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  /**
-   * If this request came from a normal <form>, redirect to a real page instead of JSON.
-   * That page should just tell them to check their email.
-   */
+  // Browser form: go to verify email screen (nice UX)
   const accept = req.headers.get("accept") ?? "";
   if (accept.includes("text/html")) {
-    const url = new URL(`${origin}/verify-email`);
-    url.searchParams.set("email", email);
-    return NextResponse.redirect(url, 303);
+    const to = new URL("/verify-email", origin);
+    to.searchParams.set("email", email);
+    return NextResponse.redirect(to, 303);
   }
 
-  // For fetch() usage
   return NextResponse.json({ ok: true });
 }
