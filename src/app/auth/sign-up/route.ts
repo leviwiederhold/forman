@@ -1,33 +1,43 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
-  const formData = await req.formData();
+export const dynamic = "force-dynamic";
 
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+function getOrigin(req: Request) {
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host) return `${proto}://${host}`;
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://forman-u4mc.vercel.app";
+}
+
+export async function POST(req: Request) {
+  const supabase = await createSupabaseServerClient();
+
+  const form = await req.formData();
+  const email = String(form.get("email") ?? "").trim();
+  const password = String(form.get("password") ?? "");
 
   if (!email || !password) {
-    return NextResponse.redirect(new URL("/signup?error=invalid", req.url));
+    return NextResponse.json(
+      { error: "Email and password are required." },
+      { status: 400 }
+    );
   }
+
+  const origin = getOrigin(req);
 
   const { error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      // ✅ force correct redirect target
+      emailRedirectTo: `${origin}/verify-email`,
+    },
   });
 
   if (error) {
-    const url = new URL("/signup", req.url);
-    url.searchParams.set("error", "auth");
-    url.searchParams.set("message", error.message);
-    return NextResponse.redirect(url);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Supabase v2 sets cookies automatically
-  return NextResponse.redirect(new URL("/dashboard", req.url));
-}
-
-export async function GET(req: NextRequest) {
-  return NextResponse.redirect(new URL("/signup", req.url));
+  return NextResponse.json({ ok: true });
 }

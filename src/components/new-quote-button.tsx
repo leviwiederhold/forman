@@ -76,21 +76,22 @@ export function NewQuoteButton({
 
   // ✅ Header-style link (text only)
   if (appearance === "nav") {
-    return (
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={loading}
-        className={[
-          "text-sm text-foreground/70 hover:text-foreground transition",
-          "disabled:opacity-60 disabled:cursor-not-allowed",
-          className,
-        ].join(" ")}
-      >
-        {loading ? "Checking…" : label}
-      </button>
-    );
-  }
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className={[
+        "text-sm text-foreground/70 hover:text-foreground transition",
+        "disabled:opacity-60 disabled:cursor-not-allowed",
+        className,
+      ].join(" ")}
+    >
+      {loading ? "Checking…" : label}
+    </button>
+  );
+}
+
 
   // ✅ Normal CTA button for dashboards/pages
   return (
