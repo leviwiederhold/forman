@@ -5,9 +5,7 @@ export const dynamic = "force-dynamic";
 
 function getOrigin(req: Request) {
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host =
-    req.headers.get("x-forwarded-host") ??
-    req.headers.get("host");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
 
   if (host) return `${proto}://${host}`;
   return process.env.NEXT_PUBLIC_SITE_URL ?? "https://forman-u4mc.vercel.app";
@@ -17,12 +15,19 @@ export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
 
   const formData = await req.formData();
-
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   // 🔒 Guard: required fields
   if (!email || !password) {
+    const accept = req.headers.get("accept") ?? "";
+    if (accept.includes("text/html")) {
+      const origin = getOrigin(req);
+      const url = new URL(`${origin}/signup`);
+      url.searchParams.set("error", "Email and password are required.");
+      return NextResponse.redirect(url, 303);
+    }
+
     return NextResponse.json(
       { error: "Email and password are required." },
       { status: 400 }
@@ -35,22 +40,25 @@ export async function POST(req: Request) {
     email,
     password,
     options: {
-      // ✅ FORCE correct verification redirect
-      emailRedirectTo: `${origin}/verify-email`,
+      // ✅ IMPORTANT: send the email link to the callback that exchanges the code
+      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
     },
   });
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    );
+    const accept = req.headers.get("accept") ?? "";
+    if (accept.includes("text/html")) {
+      const url = new URL(`${origin}/signup`);
+      url.searchParams.set("error", error.message);
+      return NextResponse.redirect(url, 303);
+    }
+
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   /**
-   * ✅ IMPORTANT:
-   * If this request came from a normal <form>,
-   * redirect to a real page instead of showing JSON.
+   * If this request came from a normal <form>, redirect to a real page instead of JSON.
+   * That page should just tell them to check their email.
    */
   const accept = req.headers.get("accept") ?? "";
   if (accept.includes("text/html")) {
