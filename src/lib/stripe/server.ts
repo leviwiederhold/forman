@@ -1,10 +1,25 @@
 // src/lib/stripe/server.ts
+export const runtime = "nodejs";
+
 import Stripe from "stripe";
 
-const stripeKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeKey) throw new Error("Missing STRIPE_SECRET_KEY");
+/**
+ * Force required env vars at runtime
+ */
+export function mustEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || value.length === 0) {
+    throw new Error(`Missing required env var: ${name}`);
+  }
+  return value;
+}
 
-export const stripe = new Stripe(stripeKey, {
+/**
+ * Stripe server client
+ * NOTE:
+ * - This must only be used in server / API routes
+ * - Do NOT import this into client components
+ */
+export const stripe = new Stripe(mustEnv("STRIPE_SECRET_KEY"), {
   apiVersion: "2025-12-15.clover",
-  typescript: true,
 });
