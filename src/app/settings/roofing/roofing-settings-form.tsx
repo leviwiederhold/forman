@@ -51,10 +51,14 @@ function PercentInput({
   value,
   onChange,
   placeholder,
+  min,
+  max,
 }: {
   value: number;
   onChange: (v: number) => void;
   placeholder?: string;
+  min?: number;
+  max?: number;
 }) {
   return (
     <div className="relative w-full max-w-[240px]">
@@ -62,6 +66,8 @@ function PercentInput({
         inputMode="decimal"
         type="number"
         step="0.01"
+        min={min}
+        max={max}
         className="pr-10"
         value={Number.isFinite(value) ? value : 0}
         placeholder={placeholder}
@@ -87,15 +93,29 @@ function FieldRow({
     <div className="flex items-start justify-between gap-6 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
       <div className="min-w-0">
         <div className="text-sm text-foreground/85">{label}</div>
-        {hint ? <div className="mt-0.5 text-xs text-foreground/55">{hint}</div> : null}
+        {hint ? (
+          <div className="mt-0.5 text-xs text-foreground/55">{hint}</div>
+        ) : null}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
   );
 }
 
-export function RoofingSettingsForm({ initialRates }: { initialRates: RoofingRateCard }) {
-  const [status, setStatus] = React.useState<null | "saving" | "saved" | "error">(null);
+export function RoofingSettingsForm({
+  initialRates,
+}: {
+  initialRates: RoofingRateCard;
+}) {
+  const [rateStatus, setRateStatus] = React.useState<
+    null | "saving" | "saved" | "error"
+  >(null);
+
+  // Deposit settings state (separate from rate card form)
+  const [depositPercent, setDepositPercent] = React.useState<number>(25);
+  const [depositStatus, setDepositStatus] = React.useState<
+    null | "loading" | "saving" | "saved" | "error"
+  >(null);
 
   const form = useForm<RoofingRateCard>({
     resolver: zodResolver(RoofingRateCardSchema),
@@ -103,8 +123,65 @@ export function RoofingSettingsForm({ initialRates }: { initialRates: RoofingRat
     mode: "onBlur",
   });
 
+  // Load current deposit percent from server
+  React.useEffect(() => {
+    let alive = true;
+
+    async function loadDeposit() {
+      setDepositStatus("loading");
+      try {
+        const res = await fetch("/api/profile/deposit-percent", {
+          cache: "no-store",
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          depositPercent?: number | null;
+        };
+
+        if (!alive) return;
+
+        const v = Number(json.depositPercent);
+        if (Number.isFinite(v) && v >= 0 && v <= 100) {
+          setDepositPercent(v);
+        } else {
+          setDepositPercent(25);
+        }
+
+        setDepositStatus(null);
+      } catch {
+        if (!alive) return;
+        setDepositStatus("error");
+      }
+    }
+
+    loadDeposit();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function saveDeposit() {
+    setDepositStatus("saving");
+    try {
+      const res = await fetch("/api/profile/deposit-percent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ depositPercent }),
+      });
+
+      if (!res.ok) {
+        setDepositStatus("error");
+        return;
+      }
+
+      setDepositStatus("saved");
+      setTimeout(() => setDepositStatus(null), 1500);
+    } catch {
+      setDepositStatus("error");
+    }
+  }
+
   async function onSubmit(values: RoofingRateCard) {
-    setStatus("saving");
+    setRateStatus("saving");
     try {
       const res = await fetch("/api/rate-cards/roofing", {
         method: "PUT",
@@ -115,26 +192,72 @@ export function RoofingSettingsForm({ initialRates }: { initialRates: RoofingRat
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         console.log(j);
-        setStatus("error");
+        setRateStatus("error");
         return;
       }
 
-      setStatus("saved");
-      setTimeout(() => setStatus(null), 1500);
+      setRateStatus("saved");
+      setTimeout(() => setRateStatus(null), 1500);
     } catch {
-      setStatus("error");
+      setRateStatus("error");
     }
   }
 
   return (
     <div className="rounded-2xl border bg-card p-5 text-card-foreground">
       <div className="mb-4 space-y-1">
-        <div className="text-sm text-foreground/85">Roofing rate card</div>
+        <div className="text-sm text-foreground/85">Roofing settings</div>
         <div className="text-xs text-foreground/60">
-          These are your default rates. Quotes use your latest saved card.
+          Configure deposits + your default rate card. Quotes use your latest saved
+          values.
         </div>
       </div>
 
+      {/* Deposits */}
+      <section className="space-y-3">
+        <div className="text-xs uppercase tracking-wider text-foreground/60">
+          Deposits
+        </div>
+
+        <FieldRow
+          label="Deposit percent"
+          hint="Customers can pay a deposit after approving a quote (Stripe)."
+        >
+          <PercentInput
+            value={depositPercent}
+            onChange={setDepositPercent}
+            min={0}
+            max={100}
+          />
+        </FieldRow>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="text-xs text-foreground/60">
+            {depositStatus === "loading"
+              ? "Loading…"
+              : depositStatus === "saving"
+              ? "Saving…"
+              : depositStatus === "saved"
+              ? "Saved."
+              : depositStatus === "error"
+              ? "Save failed."
+              : " "}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={saveDeposit}
+            disabled={depositStatus === "saving" || depositStatus === "loading"}
+          >
+            Save deposit %
+          </Button>
+        </div>
+      </section>
+
+      <Separator className="my-6" />
+
+      {/* Rate Card */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* BASE COSTS */}
@@ -341,16 +464,16 @@ export function RoofingSettingsForm({ initialRates }: { initialRates: RoofingRat
 
           <div className="flex items-center justify-between pt-2">
             <div className="text-xs text-foreground/60">
-              {status === "saving"
+              {rateStatus === "saving"
                 ? "Saving…"
-                : status === "saved"
-                  ? "Saved."
-                  : status === "error"
-                    ? "Save failed."
-                    : " "}
+                : rateStatus === "saved"
+                ? "Saved."
+                : rateStatus === "error"
+                ? "Save failed."
+                : " "}
             </div>
 
-            <Button type="submit" disabled={status === "saving"}>
+            <Button type="submit" disabled={rateStatus === "saving"}>
               Save rate card
             </Button>
           </div>

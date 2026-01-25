@@ -10,17 +10,12 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/quotes/share/") ||
-    pathname.startsWith("/feedback") ||
-    pathname.startsWith("/api/feedback") ||
-    pathname.startsWith("/api/quotes/share/") ||
-    pathname.startsWith("/api/auth/") // allow auth endpoints
+    pathname.startsWith("/feedback")
   );
 }
 
 function safeRedirectTarget(pathname: string) {
-  // Never redirect a browser to API routes
   if (!pathname || pathname.startsWith("/api/")) return "/dashboard";
-  // Prevent external redirects
   if (!pathname.startsWith("/")) return "/dashboard";
   return pathname;
 }
@@ -29,16 +24,21 @@ function isEmailVerificationBypassPath(pathname: string) {
   return (
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/quotes/share/")
+    pathname.startsWith("/quotes/share/")
   );
 }
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // ✅ Do not run redirects for API endpoints at all
-  if (pathname.startsWith("/api/")) return NextResponse.next();
+  // ✅ Explicit API bypasses (Stripe + public flows)
+  if (
+    pathname.startsWith("/api/stripe/webhook") ||
+    pathname.startsWith("/api/quotes/share/") ||
+    pathname.startsWith("/api/auth/")
+  ) {
+    return NextResponse.next();
+  }
 
   // Always allow public routes
   if (isPublicPath(pathname)) return NextResponse.next();
@@ -65,6 +65,7 @@ export async function middleware(req: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
 
+  // Not logged in → login
   if (!data.user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
