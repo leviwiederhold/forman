@@ -1,77 +1,94 @@
-// src/app/api/quotes/share/[token]/deposit/route.ts
-import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type Params = {
-  params: {
-    token: string;
-  };
-};
+import { NextResponse, type NextRequest } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { stripe, mustEnv } from "@/lib/stripe/server";
 
-export async function POST(req: Request, { params }: Params) {
-  const { token } = params;
+export const dynamic = "force-dynamic";
 
-  const supabase = createSupabaseAdminClient();
+type Ctx = { params: Promise<{ token: string }> };
 
-  // 1️⃣ Load quote by share token
-  const { data: quote, error } = await supabase
+export async function GET() {
+  return NextResponse.json(
+    { error: "Method Not Allowed. Use POST from the Deposit button." },
+    { status: 405 }
+  );
+}
+
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const { token } = await ctx.params;
+
+  // required envs
+  mustEnv("STRIPE_SECRET_KEY");
+  mustEnv("NEXT_PUBLIC_SITE_URL");
+
+  const origin =
+    req.headers.get("x-forwarded-proto") && req.headers.get("x-forwarded-host")
+      ? `${req.headers.get("x-forwarded-proto")}://${req.headers.get("x-forwarded-host")}`
+      : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const admin = createSupabaseAdminClient();
+
+  // 1) Load quote by share token
+  const { data: quote, error } = await admin
     .from("quotes")
-    .select(
-      `
-      id,
-      total,
-      deposit_amount,
-      customer_email,
-      user_id
-    `
-    )
+    .select("id, total, user_id")
     .eq("share_token", token)
-    .single();
+    .single<{ id: string; total: number | null; user_id: string }>();
 
   if (error || !quote) {
-    return NextResponse.json(
-      { error: "Quote not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const depositCents = Math.round(
-    (quote.deposit_amount ?? quote.total) * 100
-  );
+  const total = quote.total ?? 0;
+  if (total <= 0) {
+    return NextResponse.json({ error: "Invalid quote total" }, { status: 400 });
+  }
 
-  // 2️⃣ Create Stripe Checkout (deposit only)
+  // 2) Find roofer’s connected account
+  const { data: acct } = await admin
+    .from("stripe_connect_accounts")
+    .select("stripe_account_id, charges_enabled")
+    .eq("user_id", quote.user_id)
+    .maybeSingle<{ stripe_account_id: string; charges_enabled: boolean | null }>();
+
+  if (!acct?.stripe_account_id) {
+    return NextResponse.json({ error: "Roofer not connected to Stripe" }, { status: 409 });
+  }
+  if (!acct.charges_enabled) {
+    return NextResponse.json({ error: "Roofer Stripe not enabled for charges" }, { status: 409 });
+  }
+
+  // 3) Create Checkout Session that pays the roofer (destination charge)
+  // NOTE: Deposit amount % should come from roofer profile; defaulting to 30% here
+  const depositPct = 30;
+  const depositAmount = Math.max(1, Math.round((total * (depositPct / 100)) * 100)); // cents
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    payment_method_types: ["card"],
-    customer_email: quote.customer_email ?? undefined,
-
     line_items: [
       {
         price_data: {
           currency: "usd",
-          product_data: {
-            name: "Roofing Project Deposit",
-          },
-          unit_amount: depositCents,
+          unit_amount: depositAmount,
+          product_data: { name: "Roof deposit" },
         },
         quantity: 1,
       },
     ],
-
+    success_url: `${origin}/quotes/share/${token}?deposit=success`,
+    cancel_url: `${origin}/quotes/share/${token}?deposit=cancel`,
     metadata: {
       quote_id: quote.id,
-      user_id: quote.user_id,
-      type: "deposit",
+      share_token: token,
+      deposit_pct: String(depositPct),
     },
-
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/quotes/${quote.id}/success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/quotes/${quote.id}`,
+    payment_intent_data: {
+      transfer_data: {
+        destination: acct.stripe_account_id,
+      },
+    },
   });
 
-  // 3️⃣ Redirect browser to Stripe Checkout
   return NextResponse.redirect(session.url!, 303);
 }
