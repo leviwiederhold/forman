@@ -1,0 +1,140 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { NextResponse, type NextRequest } from "next/server";
+import Stripe from "stripe";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+function getOrigin(req: NextRequest) {
+  const proto = req.headers.get("x-forwarded-proto") ?? "http";
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host) return `${proto}://${host}`;
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
+function moneyCentsFromPercent(totalDollars: number, percent: number) {
+  const totalCents = Math.round(totalDollars * 100);
+  const pct = Math.min(100, Math.max(0, percent));
+  return Math.round((totalCents * pct) / 100);
+}
+
+export async function POST(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const origin = getOrigin(req);
+
+  const { token } = await ctx.params;
+
+  const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!stripeKey) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+
+  const admin = createSupabaseAdminClient();
+
+  // 1) Resolve quote by share token
+  const { data: quote, error: qErr } = await admin
+    .from("quotes")
+    .select(
+      "id, user_id, subtotal, total, status, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
+    )
+    .eq("share_token", token)
+    .maybeSingle<{
+      id: string;
+      user_id: string;
+      subtotal: number | null;
+      total: number | null;
+      status: string | null;
+      low_margin_acknowledged_at: string | null;
+      deposit_paid_at: string | null;
+      deposit_paid_cents: number | null;
+    }>();
+
+  if (qErr || !quote) {
+    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  }
+
+  // If already paid, don't create another session
+  if (quote.deposit_paid_at || (quote.deposit_paid_cents ?? 0) > 0) {
+    return NextResponse.json({ error: "Deposit already paid" }, { status: 409 });
+  }
+
+  // Keep the same guardrail as the share page
+  const subtotal = typeof quote.subtotal === "number" ? quote.subtotal : 0;
+  const total = typeof quote.total === "number" ? quote.total : 0;
+  const marginPct = total > 0 ? ((total - subtotal) / total) * 100 : 0;
+  const TARGET_MARGIN = 30;
+
+  if (marginPct < TARGET_MARGIN && !quote.low_margin_acknowledged_at) {
+    return NextResponse.json({ error: "Quote unavailable" }, { status: 403 });
+  }
+
+  // 2) Load roofer deposit settings (preference)
+  const { data: prof, error: pErr } = await admin
+    .from("profiles")
+    .select("deposit_percent, accept_deposits_on_share")
+    .eq("id", quote.user_id)
+    .maybeSingle<{ deposit_percent: number | null; accept_deposits_on_share: boolean | null }>();
+
+  if (pErr) return NextResponse.json({ error: "Profile lookup failed" }, { status: 500 });
+
+  const accept = Boolean(prof?.accept_deposits_on_share);
+  const percent = typeof prof?.deposit_percent === "number" ? prof?.deposit_percent : 0;
+
+  if (!accept || percent <= 0) {
+    return NextResponse.json({ error: "Deposits disabled" }, { status: 400 });
+  }
+
+  // 3) Ensure roofer has Stripe Connect ready
+  const { data: acct, error: aErr } = await admin
+    .from("stripe_connect_accounts")
+    .select("stripe_account_id, charges_enabled")
+    .eq("user_id", quote.user_id)
+    .maybeSingle<{ stripe_account_id: string; charges_enabled: boolean }>();
+
+  if (aErr) return NextResponse.json({ error: "Payments lookup failed" }, { status: 500 });
+  if (!acct?.stripe_account_id) return NextResponse.json({ error: "Payments not setup" }, { status: 400 });
+  if (!acct.charges_enabled) return NextResponse.json({ error: "Payments not enabled yet" }, { status: 400 });
+
+  const depositCents = moneyCentsFromPercent(total, percent);
+  if (!Number.isFinite(depositCents) || depositCents < 50) {
+    return NextResponse.json({ error: "Deposit amount too small" }, { status: 400 });
+  }
+
+  const stripe = new Stripe(stripeKey, { apiVersion: "2025-12-15.clover" });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: depositCents,
+          product_data: { name: "Roofing deposit" },
+        },
+      },
+    ],
+    success_url: `${origin}/quotes/share/${token}?deposit=success`,
+    cancel_url: `${origin}/quotes/share/${token}?deposit=cancel`,
+    payment_intent_data: {
+      transfer_data: { destination: acct.stripe_account_id },
+      metadata: {
+        quote_id: quote.id,
+        share_token: token,
+        roofer_user_id: quote.user_id,
+        kind: "deposit",
+      },
+    },
+    metadata: {
+      quote_id: quote.id,
+      share_token: token,
+      roofer_user_id: quote.user_id,
+      kind: "deposit",
+    },
+  });
+
+  // Store session id for debugging (optional; don't fail if update fails)
+  await admin
+    .from("quotes")
+    .update({ deposit_checkout_session_id: session.id })
+    .eq("id", quote.id);
+
+  return NextResponse.json({ url: session.url }, { status: 200 });
+}
