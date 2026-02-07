@@ -27,15 +27,9 @@ export default async function RoofingSettingsPage() {
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Page header */}
         <header className="space-y-2">
-          <div className="flex items-center justify-between gap-4">
-            <div className="text-xs uppercase tracking-wider text-foreground/60">
-              Pricing
-            </div>
-          </div>
-
-          <h1 className="text-xl font-light">Roofing pricing</h1>
+          <h1 className="text-lg font-light tracking-wide">Pricing</h1>
           <p className="text-sm text-foreground/70">
-            These prices are used to calculate new roofing quotes. You can still add custom items per quote.
+            Set the default rates used for new roofing quotes. You can still add custom items per quote.
           </p>
         </header>
 

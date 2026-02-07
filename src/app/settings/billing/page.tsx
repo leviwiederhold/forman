@@ -27,22 +27,15 @@ export default async function PaymentsSettingsPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm text-foreground/70">Payments</div>
-          <h1 className="text-lg font-light tracking-wide">Get paid by customers</h1>
-        </div>
-
-        <Button asChild variant="outline">
-          <Link href="/dashboard">Back</Link>
-        </Button>
+      <div className="space-y-1">
+        <h1 className="text-lg font-light tracking-wide">Get Paid</h1>
+        <p className="text-xs text-foreground/60">
+          Connect Stripe so customers can pay deposits directly to you.
+        </p>
       </div>
 
       <div className="rounded-2xl border bg-card p-5 space-y-3">
         <div className="text-sm text-foreground/80">Stripe Connect</div>
-        <div className="text-xs text-foreground/60">
-          Connect Stripe so customers can pay deposits directly to you.
-        </div>
 
         <div className="text-sm">
           Status:{" "}
@@ -58,7 +51,7 @@ export default async function PaymentsSettingsPage() {
         </form>
 
         <div className="text-xs text-foreground/50">
-          Your Forman subscription is managed on the Subscribe page.
+          Forman never holds customer funds — deposits go straight to your Stripe.
         </div>
 
         <Button asChild variant="outline">

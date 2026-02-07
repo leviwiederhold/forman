@@ -9,17 +9,16 @@ import { Menu, X } from "lucide-react";
 import { NewQuoteButton } from "@/components/new-quote-button";
 import { BillingStatusBadge } from "@/components/billing-status-badge";
 
+// Order: most-used → least-used. Dashboard is accessed via the logo.
 const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/quotes", label: "Quotes" },
-  { href: "/reports", label: "Reports" },
   { href: "/settings/roofing", label: "Pricing" },
-  { href: "/settings/billing", label: "Payments" },
+  { href: "/reports", label: "Insights" },
+  { href: "/quotes", label: "Quotes" },
+  { href: "/settings/billing", label: "Get Paid" },
   { href: "/billing", label: "Subscribe" },
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -56,7 +55,13 @@ export function MobileMenu() {
         aria-modal="true"
       >
         <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-          <div className="text-sm font-medium tracking-wide">Forman</div>
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium tracking-wide hover:opacity-90 transition"
+            onClick={() => setOpen(false)}
+          >
+            Forman
+          </Link>
           <button
             type="button"
             onClick={() => setOpen(false)}

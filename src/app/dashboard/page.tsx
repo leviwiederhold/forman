@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { calculateEffectiveMargin } from "@/lib/quotes/margin";
-import { NewQuoteButton } from "@/components/new-quote-button";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +80,31 @@ export default async function DashboardPage() {
   const rows30 = (recent30 ?? []) as QuoteRow[];
   const rows5 = (recent5 ?? []) as QuoteRow[];
 
+// Setup checklist (activation)
+const [{ data: rateCard }, { data: connectAcct }] = await Promise.all([
+  supabase
+    .from("rate_cards")
+    .select("id, updated_at")
+    .eq("user_id", auth.user.id)
+    .eq("trade", "roofing")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string; updated_at: string | null }>(),
+  supabase
+    .from("stripe_connect_accounts")
+    .select("charges_enabled")
+    .eq("user_id", auth.user.id)
+    .maybeSingle<{ charges_enabled: boolean | null }>(),
+]);
+
+const setup = {
+  pricingSet: Boolean(rateCard?.id),
+  stripeConnected: Boolean(connectAcct?.charges_enabled),
+  hasQuote: rows5.length > 0,
+};
+
+const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuote;
+
   let totalQuoted = 0;
   let count = 0;
   let wonCount = 0;
@@ -126,29 +149,34 @@ export default async function DashboardPage() {
   const avgJob = count ? totalQuoted / count : 0;
   const avgMargin = count ? marginSum / count : 0;
 
+  const headline = !setupComplete
+    ? "Finish setup"
+    : count === 0
+    ? "Create your first quote"
+    : "This month at a glance";
+
+  const subhead = !setupComplete
+    ? "A couple quick steps and you'll be ready to send quotes."
+    : count === 0
+    ? "Once you send a quote, your stats and insights will show up here."
+    : "A quick snapshot of your last 30 days.";
+
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-sm text-foreground/70">Dashboard</div>
-          <h1 className="text-lg font-light tracking-wide">Welcome back</h1>
-        </div>
-
-        <div className="flex gap-2">
-          {/* ✅ popup gate */}
-          <NewQuoteButton />
-
-          <Button asChild variant="outline">
-            <Link href="/settings/roofing">Pricing</Link>
-          </Button>
-
-          <Button asChild variant="outline">
-            <Link href="/reports">Reports</Link>
-          </Button>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-lg font-light tracking-wide">{headline}</h1>
+        <div className="text-xs text-foreground/60">{subhead}</div>
       </div>
 
       <Separator />
+
+      {!setupComplete ? (
+        <SetupChecklist
+          pricingSet={setup.pricingSet}
+          stripeConnected={setup.stripeConnected}
+          hasQuote={setup.hasQuote}
+        />
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Quoted (30d)" value={fmtMoney(totalQuoted)} />
@@ -234,9 +262,81 @@ export default async function DashboardPage() {
   );
 }
 
+
+function SetupChecklist({
+  pricingSet,
+  stripeConnected,
+  hasQuote,
+}: {
+  pricingSet: boolean;
+  stripeConnected: boolean;
+  hasQuote: boolean;
+}) {
+  const items = [
+    {
+      label: "Set your pricing",
+      done: pricingSet,
+      href: "/settings/roofing",
+      helper: "These rates power your quote totals.",
+    },
+    {
+      label: "Connect Stripe",
+      done: stripeConnected,
+      href: "/settings/billing",
+      helper: "So customers can pay deposits directly to you.",
+    },
+    {
+      label: "Create your first quote",
+      done: hasQuote,
+      href: "/quotes/new",
+      helper: "Takes about 60 seconds once pricing is set.",
+    },
+  ];
+
+  const doneCount = items.filter((i) => i.done).length;
+
+  return (
+    <section className="rounded-2xl border bg-card p-5">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-sm text-foreground/70">Setup</div>
+          <div className="text-lg font-medium">Complete these once</div>
+          <div className="text-xs text-foreground/60">
+            {doneCount}/3 complete · Most roofers finish this in under 5 minutes.
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {items.map((it) => (
+          <Link
+            key={it.label}
+            href={it.href}
+            className="group flex items-start justify-between rounded-xl border bg-background/40 px-4 py-3 transition hover:bg-white/5"
+          >
+            <div className="pr-3">
+              <div className="text-sm">
+                <span className={it.done ? "text-emerald-500" : "text-foreground/80"}>
+                  {it.done ? "✓" : "•"}
+                </span>{" "}
+                <span className={it.done ? "line-through text-foreground/50" : ""}>{it.label}</span>
+              </div>
+              <div className="mt-1 text-xs text-foreground/60">{it.helper}</div>
+            </div>
+            <div className="text-xs text-foreground/50 transition group-hover:text-foreground/70">
+              {it.done ? "Done" : "Open →"}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-4">
+    <div className="rounded-2xl border bg-card p-4 transition will-change-transform hover:-translate-y-0.5 hover:shadow-sm">
       <div className="text-xs text-foreground/60">{label}</div>
       <div className="mt-1 text-lg font-light tracking-wide">{value}</div>
     </div>

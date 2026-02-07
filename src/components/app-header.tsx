@@ -8,17 +8,16 @@ import { NewQuoteButton } from "@/components/new-quote-button";
 import { BillingStatusBadge } from "@/components/billing-status-badge";
 import { MobileMenu } from "@/components/mobile-menu";
 
+// Order: most-used → least-used. Dashboard is accessed via the logo.
 const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/quotes", label: "Quotes" },
-  { href: "/reports", label: "Reports" },
   { href: "/settings/roofing", label: "Pricing" },
-  { href: "/settings/billing", label: "Payments" },
+  { href: "/reports", label: "Insights" },
+  { href: "/quotes", label: "Quotes" },
+  { href: "/settings/billing", label: "Get Paid" },
   { href: "/billing", label: "Subscribe" },
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -35,10 +34,10 @@ function NavLink({
     <Link
       href={href}
       className={[
-        "text-sm transition",
+        "rounded-lg px-2.5 py-1 text-sm transition-colors",
         active
-          ? "text-foreground"
-          : "text-foreground/70 hover:text-foreground",
+          ? "bg-white/5 text-foreground"
+          : "text-foreground/70 hover:bg-white/5 hover:text-foreground",
       ].join(" ")}
     >
       {label}
@@ -55,13 +54,14 @@ export default function AppHeader() {
         {/* LEFT */}
         <Link
           href="/dashboard"
-          className="flex-shrink-0 text-sm font-medium tracking-wide"
+          className="flex-shrink-0 text-sm font-medium tracking-wide hover:opacity-90 transition"
         >
           Forman
         </Link>
 
         {/* CENTER (desktop) */}
-        <nav className="mx-auto hidden items-center gap-6 md:flex">
+        <nav className="mx-auto hidden items-center gap-2 md:flex">
+          <NewQuoteButton appearance="nav" />
           {NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -70,7 +70,6 @@ export default function AppHeader() {
               active={isActive(pathname, item.href)}
             />
           ))}
-          <NewQuoteButton appearance="nav" />
         </nav>
 
         {/* RIGHT (desktop) */}
@@ -79,7 +78,7 @@ export default function AppHeader() {
           <form action="/auth/sign-out" method="post">
             <button
               type="submit"
-              className="text-sm text-foreground/70 hover:text-foreground transition"
+              className="rounded-lg px-2.5 py-1 text-sm text-foreground/70 hover:bg-white/5 hover:text-foreground transition"
             >
               Sign out
             </button>
