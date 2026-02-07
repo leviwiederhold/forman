@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Separator } from "@/components/ui/separator";
 import { calculateEffectiveMargin } from "@/lib/quotes/margin";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -233,7 +234,9 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
             <div className="text-sm">No quotes yet</div>
             <div className="mt-4">
               {/* ✅ popup gate */}
-              <NewQuoteButton />
+              <Button asChild className="w-full">
+  <Link href="/quotes/new">New Quote</Link>
+</Button>
             </div>
           </div>
         ) : (
