@@ -12,9 +12,7 @@ export default async function BillingPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const { data: connect } = await supabase
     .from("stripe_connect_accounts")
@@ -40,8 +38,10 @@ export default async function BillingPage() {
             <p className="text-sm text-foreground/70">
               Stripe is not connected yet.
             </p>
+
+            {/* ✅ this route redirects to Stripe onboarding */}
             <Button asChild>
-              <Link href="/api/stripe/connect">Connect Stripe</Link>
+              <Link href="/api/stripe/connect/onboard">Connect Stripe</Link>
             </Button>
           </>
         )}
@@ -49,14 +49,17 @@ export default async function BillingPage() {
         {isConnected && !isEnabled && (
           <>
             <p className="text-sm text-foreground/70">
-              Connected ✅ — setup in progress. Finish Stripe onboarding to
-              accept payments.
+              Connected — setup in progress. Finish Stripe onboarding to accept payments.
             </p>
+
             <div className="flex gap-2">
+              {/* ✅ continue onboarding */}
               <Button asChild>
-                <Link href="/api/stripe/connect">Continue setup</Link>
+                <Link href="/api/stripe/connect/onboard">Continue setup</Link>
               </Button>
-              <form action="/api/stripe/connect/sync" method="post">
+
+              {/* ✅ refresh status AND redirects back */}
+              <form action="/api/stripe/connect/return" method="post">
                 <Button type="submit" variant="outline">
                   Refresh status
                 </Button>
@@ -68,9 +71,11 @@ export default async function BillingPage() {
         {isConnected && isEnabled && (
           <>
             <p className="text-sm text-foreground/70">
-              Connected ✅ Customers can now pay deposits.
+              Connected — customers can now pay deposits.
             </p>
-            <form action="/api/stripe/connect/sync" method="post">
+
+            {/* ✅ refresh status AND redirects back */}
+            <form action="/api/stripe/connect/return" method="post">
               <Button type="submit" variant="outline">
                 Refresh status
               </Button>
