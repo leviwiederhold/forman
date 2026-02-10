@@ -6,6 +6,7 @@ import type { JsonValue } from "@/lib/types/json";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatExpiresIn, getQuoteExpirationStatus } from "@/lib/quotes/expiration";
+import { FollowUpTemplates } from "@/components/quotes/FollowUpTemplates";
 import { QuoteActions } from "./quote-actions";
 import { DeleteQuoteButton } from "@/components/delete-quote-button";
 
@@ -173,7 +174,7 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   const dayOfMonth = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-  const [{ data: profile }, { data: mtdRows }] = await Promise.all([
+  const [{ data: profile }, { data: mtdRows }, { data: connectAcct }] = await Promise.all([
     supabase
       .from("profiles")
       .select("*")
@@ -186,7 +187,21 @@ export default async function QuoteDetailPage({ params }: PageProps) {
       .gte("created_at", monthStart.toISOString())
       .order("created_at", { ascending: false })
       .limit(500),
+    supabase
+      .from("stripe_connect_accounts")
+      .select("charges_enabled")
+      .eq("user_id", auth.user.id)
+      .maybeSingle<{ charges_enabled: boolean | null }>(),
   ]);
+
+  const profileDepositPercentRaw = profile?.deposit_percent;
+  const profileDepositPercent =
+    typeof profileDepositPercentRaw === "number" && Number.isFinite(profileDepositPercentRaw)
+      ? profileDepositPercentRaw
+      : Number(profileDepositPercentRaw ?? 0);
+  const depositPercent = Number.isFinite(profileDepositPercent) ? profileDepositPercent : 0;
+  const acceptDepositsOnShare = Boolean(profile?.accept_deposits_on_share);
+  const depositEnabled = acceptDepositsOnShare && depositPercent > 0 && Boolean(connectAcct?.charges_enabled);
 
   const monthlyProfitTarget = readMonthlyProfitTarget(profile ?? null);
   if (monthlyProfitTarget) {
@@ -288,6 +303,16 @@ export default async function QuoteDetailPage({ params }: PageProps) {
             comparisonWarning={comparisonWarning}
             monthlyTargetWarning={monthlyTargetWarning}
           />
+
+          <div className="mt-3">
+            <FollowUpTemplates
+              customerName={quote.customer_name}
+              total={quote.total ?? 0}
+              expiresAt={quote.expires_at}
+              depositEnabled={depositEnabled}
+              depositPercent={depositPercent}
+            />
+          </div>
 
           <div className="mt-3 flex justify-end">
             <DeleteQuoteButton
