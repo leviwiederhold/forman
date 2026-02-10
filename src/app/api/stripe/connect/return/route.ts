@@ -16,10 +16,12 @@ function getOrigin(req: NextRequest) {
 
 async function handler(req: NextRequest) {
   const origin = getOrigin(req);
+  const errorUrl = new URL("/settings/billing?connect=error", origin);
 
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (!stripeKey) {
-    return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+    console.error("Missing STRIPE_SECRET_KEY");
+    return NextResponse.redirect(errorUrl, 303);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -37,18 +39,23 @@ async function handler(req: NextRequest) {
     return NextResponse.redirect(new URL("/settings/billing?connect=missing", origin), 303);
   }
 
-  const stripe = new Stripe(stripeKey, { apiVersion: "2025-12-15.clover" });
-  const acct = await stripe.accounts.retrieve(row.stripe_account_id);
+  try {
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-12-15.clover" });
+    const acct = await stripe.accounts.retrieve(row.stripe_account_id);
 
-  await supabase
-    .from("stripe_connect_accounts")
-    .update({
-      charges_enabled: acct.charges_enabled,
-      payouts_enabled: acct.payouts_enabled,
-      details_submitted: acct.details_submitted,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", auth.user.id);
+    await supabase
+      .from("stripe_connect_accounts")
+      .update({
+        charges_enabled: acct.charges_enabled,
+        payouts_enabled: acct.payouts_enabled,
+        details_submitted: acct.details_submitted,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", auth.user.id);
+  } catch (error) {
+    console.error("Stripe connect return sync failed:", error);
+    return NextResponse.redirect(errorUrl, 303);
+  }
 
   return NextResponse.redirect(new URL("/settings/billing?connect=done", origin), 303);
 }

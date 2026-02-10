@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,16 @@ export async function POST(req: Request, ctx: Ctx) {
 
     const { data: quote, error: qErr } = await supabase
       .from("quotes")
-      .select("id, status")
+      .select("id, status, expires_at")
       .eq("share_token", token)
       .single();
 
     if (qErr || !quote) {
       return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+    }
+
+    if (getQuoteExpirationStatus(quote.expires_at).isExpired) {
+      return NextResponse.json({ error: "Quote expired" }, { status: 410 });
     }
 
     const { error: uErr } = await supabase

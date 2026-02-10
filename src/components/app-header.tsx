@@ -34,10 +34,10 @@ function NavLink({
     <Link
       href={href}
       className={[
-        "rounded-lg px-2.5 py-1 text-sm transition-colors",
+        "rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
         active
-          ? "bg-white/5 text-foreground"
-          : "text-foreground/70 hover:bg-white/5 hover:text-foreground",
+          ? "border border-primary/35 bg-primary/15 text-foreground"
+          : "text-foreground/70 hover:bg-white/8 hover:text-foreground",
       ].join(" ")}
     >
       {label}
@@ -49,12 +49,12 @@ export default function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-white/10 bg-background/50 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center px-4">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-background/65 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center px-4">
         {/* LEFT */}
         <Link
           href="/dashboard"
-          className="flex-shrink-0 text-sm font-medium tracking-wide hover:opacity-90 transition"
+          className="flex-shrink-0 text-[1.05rem] font-semibold tracking-[0.16em] uppercase transition hover:opacity-90"
         >
           Forman
         </Link>
@@ -78,7 +78,7 @@ export default function AppHeader() {
           <form action="/auth/sign-out" method="post">
             <button
               type="submit"
-              className="rounded-lg px-2.5 py-1 text-sm text-foreground/70 hover:bg-white/5 hover:text-foreground transition"
+              className="rounded-xl px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-white/8 hover:text-foreground"
             >
               Sign out
             </button>

@@ -82,7 +82,7 @@ export function NewQuoteButton({
       onClick={handleClick}
       disabled={loading}
       className={[
-        "text-sm text-foreground/70 hover:text-foreground transition",
+        "rounded-xl px-3 py-1.5 text-sm font-medium text-foreground/70 transition-all hover:bg-white/8 hover:text-foreground",
         "disabled:opacity-60 disabled:cursor-not-allowed",
         className,
       ].join(" ")}

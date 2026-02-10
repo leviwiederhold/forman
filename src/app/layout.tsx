@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Quicksand } from "next/font/google";
+import type { CSSProperties } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import AppHeader from "@/components/app-header";
 import Footer from "@/components/layout/Footer";
-
-const quicksand = Quicksand({
-  subsets: ["latin"],
-  weight: ["300"],
-  variable: "--font-quicksand",
-});
 
 export const metadata: Metadata = {
   title: "Forman",
@@ -23,7 +17,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${quicksand.variable} font-sans antialiased min-h-screen flex flex-col`}>
+      <body
+        className="font-sans antialiased min-h-screen flex flex-col"
+        style={
+          {
+            "--font-quicksand":
+              "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "--font-display": "ui-serif, Georgia, Cambria, \"Times New Roman\", serif",
+          } as CSSProperties
+        }
+      >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AppHeader />
           <main className="flex-1">{children}</main>

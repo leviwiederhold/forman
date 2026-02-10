@@ -9,7 +9,9 @@ type SettingsRow = {
   accept_deposits_on_share: boolean | null;
 };
 
-function normalizePercent(v: unknown, fallback = 25) {
+const DEFAULT_DEPOSIT_PERCENT = 20;
+
+function normalizePercent(v: unknown, fallback = DEFAULT_DEPOSIT_PERCENT) {
   const n = Number(v);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(100, Math.max(0, n));
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
 
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
-    const depositPercent = normalizePercent(body.depositPercent, 25);
+    const depositPercent = normalizePercent(body.depositPercent, DEFAULT_DEPOSIT_PERCENT);
     const acceptDepositsOnShare = normalizeBool(body.acceptDepositsOnShare, false);
 
     const payload = {

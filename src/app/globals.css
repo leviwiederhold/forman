@@ -68,39 +68,39 @@
   --radius: 0.625rem;
 
   --background: #ffffff;
-  --foreground: #0b0b0b;
+  --foreground: #101010;
 
   --card: #ffffff;
-  --card-foreground: #0b0b0b;
+  --card-foreground: #101010;
 
   --popover: #ffffff;
-  --popover-foreground: #0b0b0b;
+  --popover-foreground: #101010;
 
-  --primary: #0b0b0b;
-  --primary-foreground: #f5f5f5;
+  --primary: #1b4d3e;
+  --primary-foreground: #f6f2e8;
 
-  --secondary: #f2f2f2;
-  --secondary-foreground: #0b0b0b;
+  --secondary: #f2eee4;
+  --secondary-foreground: #101010;
 
-  --muted: #f2f2f2;
-  --muted-foreground: rgba(11, 11, 11, 0.7);
+  --muted: #f5f2ea;
+  --muted-foreground: rgba(16, 16, 16, 0.7);
 
-  --accent: #f2f2f2;
-  --accent-foreground: #0b0b0b;
+  --accent: #e6dfcf;
+  --accent-foreground: #101010;
 
   --destructive: #dc2626;
-  --border: rgba(11, 11, 11, 0.12);
-  --input: rgba(11, 11, 11, 0.16);
-  --ring: rgba(11, 11, 11, 0.35);
+  --border: rgba(16, 16, 16, 0.12);
+  --input: rgba(16, 16, 16, 0.18);
+  --ring: rgba(27, 77, 62, 0.36);
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #0b0b0b;
-  --sidebar-primary: #0b0b0b;
-  --sidebar-primary-foreground: #f5f5f5;
-  --sidebar-accent: #f2f2f2;
-  --sidebar-accent-foreground: #0b0b0b;
-  --sidebar-border: rgba(11, 11, 11, 0.12);
-  --sidebar-ring: rgba(11, 11, 11, 0.35);
+  --sidebar-foreground: #101010;
+  --sidebar-primary: #1b4d3e;
+  --sidebar-primary-foreground: #f6f2e8;
+  --sidebar-accent: #f2eee4;
+  --sidebar-accent-foreground: #101010;
+  --sidebar-border: rgba(16, 16, 16, 0.12);
+  --sidebar-ring: rgba(27, 77, 62, 0.36);
 
   color-scheme: dark;
 }
@@ -109,40 +109,40 @@
    DARK MODE (Forman default)
    ================================ */
 .dark {
-  --background: #0b0b0b;
-  --foreground: #f5f5f5;
+  --background: #090d11;
+  --foreground: #f3efe6;
 
-  --card: #111111;
-  --card-foreground: #f5f5f5;
+  --card: #111922;
+  --card-foreground: #f3efe6;
 
-  --popover: #111111;
-  --popover-foreground: #f5f5f5;
+  --popover: #111922;
+  --popover-foreground: #f3efe6;
 
-  --primary: #f5f5f5;
-  --primary-foreground: #0b0b0b;
+  --primary: #f3c37a;
+  --primary-foreground: #1a1306;
 
-  --secondary: #161616;
-  --secondary-foreground: #f5f5f5;
+  --secondary: #152130;
+  --secondary-foreground: #f3efe6;
 
-  --muted: #161616;
-  --muted-foreground: rgba(245, 245, 245, 0.7);
+  --muted: #101722;
+  --muted-foreground: rgba(243, 239, 230, 0.68);
 
-  --accent: #161616;
-  --accent-foreground: #f5f5f5;
+  --accent: #1d2c3f;
+  --accent-foreground: #f3efe6;
 
   --destructive: #ef4444;
-  --border: rgba(245, 245, 245, 0.12);
-  --input: rgba(245, 245, 245, 0.16);
-  --ring: rgba(245, 245, 245, 0.25);
+  --border: rgba(243, 239, 230, 0.14);
+  --input: rgba(243, 239, 230, 0.2);
+  --ring: rgba(243, 195, 122, 0.42);
 
-  --sidebar: #0f0f0f;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #f5f5f5;
-  --sidebar-primary-foreground: #0b0b0b;
-  --sidebar-accent: #161616;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: rgba(245, 245, 245, 0.12);
-  --sidebar-ring: rgba(245, 245, 245, 0.25);
+  --sidebar: #0d141e;
+  --sidebar-foreground: #f3efe6;
+  --sidebar-primary: #f3c37a;
+  --sidebar-primary-foreground: #1a1306;
+  --sidebar-accent: #1d2c3f;
+  --sidebar-accent-foreground: #f3efe6;
+  --sidebar-border: rgba(243, 239, 230, 0.14);
+  --sidebar-ring: rgba(243, 195, 122, 0.42);
 }
 
 /* ================================
@@ -160,5 +160,31 @@ body {
 
   body {
     @apply bg-background text-foreground font-sans;
+    background-image:
+      radial-gradient(circle at 8% -12%, rgba(243, 195, 122, 0.14), transparent 38%),
+      radial-gradient(circle at 82% 8%, rgba(54, 91, 130, 0.2), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0));
+    background-attachment: fixed;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "liga" 1, "kern" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    letter-spacing: 0.01em;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 45%, transparent);
+    color: var(--primary-foreground);
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-2xl border bg-card/85 shadow-[0_18px_48px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md;
   }
 }

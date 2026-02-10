@@ -1,14 +1,33 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function ConnectStripeButton() {
+type ConnectStripeButtonProps = {
+  className?: string;
+  label?: string;
+};
+
+export function ConnectStripeButton({
+  className,
+  label = "Connect Stripe",
+}: ConnectStripeButtonProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   return (
-    <Button asChild>
-      <Link href="/api/stripe/connect/onboard">
-        Connect Stripe
-      </Link>
+    <Button
+      type="button"
+      disabled={loading}
+      className={cn(className)}
+      onClick={() => {
+        setLoading(true);
+        router.push("/api/stripe/connect");
+      }}
+    >
+      {loading ? "Redirecting..." : label}
     </Button>
   );
 }
