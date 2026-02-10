@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 
 function getOrigin(req: NextRequest) {
   const proto = req.headers.get("x-forwarded-proto") ?? "http";
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   const { data: quote, error: qErr } = await admin
     .from("quotes")
     .select(
-      "id, user_id, subtotal, total, status, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
+      "id, user_id, subtotal, total, status, expires_at, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
     )
     .eq("share_token", token)
     .maybeSingle<{
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       subtotal: number | null;
       total: number | null;
       status: string | null;
+      expires_at: string | null;
       low_margin_acknowledged_at: string | null;
       deposit_paid_at: string | null;
       deposit_paid_cents: number | null;
@@ -48,6 +50,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
 
   if (qErr || !quote) {
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  }
+
+  if (getQuoteExpirationStatus(quote.expires_at).isExpired) {
+    return NextResponse.json({ error: "Quote expired" }, { status: 410 });
   }
 
   // If already paid, don't create another session

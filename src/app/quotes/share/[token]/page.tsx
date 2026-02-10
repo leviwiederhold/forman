@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PayDepositButton } from "@/components/pay-deposit-button";
 import { ApproveAndMaybePayButton } from "@/components/approve-and-maybe-pay-button";
+import { formatExpiresIn, getQuoteExpirationStatus } from "@/lib/quotes/expiration";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ type QuoteShareView = {
   tax: number | null;
   total: number | null;
   created_at: string | null;
+  expires_at: string | null;
   share_token: string | null;
   low_margin_acknowledged_at: string | null;
   deposit_paid_at: string | null;
@@ -38,6 +41,17 @@ function marginPct(subtotal: number, total: number) {
   return ((total - subtotal) / total) * 100;
 }
 
+function formatDate(iso: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default async function QuoteSharePage({ params, searchParams }: PageProps) {
   const { token } = await params;
   const sp = (await searchParams) ?? {};
@@ -50,12 +64,22 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
   const { data: quote, error } = await supabase
     .from("quotes")
     .select(
-      "id, user_id, trade, customer_name, customer_address, status, subtotal, tax, total, created_at, share_token, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
+      "id, user_id, trade, customer_name, customer_address, status, subtotal, tax, total, created_at, expires_at, share_token, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
     )
     .eq("share_token", token)
     .single<QuoteShareView>();
 
   if (error || !quote) redirect("/");
+
+  // Record client view (idempotent row via upsert in DB function).
+  // We intentionally keep this non-blocking for page rendering.
+  const { error: viewTrackError } = await supabase.rpc("track_quote_view", {
+    p_quote_id: quote.id,
+    p_token: token,
+  });
+  if (viewTrackError) {
+    console.error("quote view tracking failed:", viewTrackError.message);
+  }
 
   // IMPORTANT: share page is public → RLS blocks profiles/stripe_connect_accounts via anon client
   // Use admin client for these two lookups so the prospect can see deposit option if roofer enabled it.
@@ -99,6 +123,11 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
 
   const approvedViaStatus = (quote.status ?? "").toLowerCase() === "accepted";
   const approved = approvedViaQuery || approvedViaStatus;
+  const createdLabel = formatDate(quote.created_at);
+  const expiration = getQuoteExpirationStatus(quote.expires_at);
+  const expiresAtLabel = formatDate(quote.expires_at);
+  const isExpired = expiration.isExpired;
+  const expiresSoonText = formatExpiresIn(expiration.msRemaining);
 
   // Server-enforced Profit Guardrail
   const TARGET_MARGIN = 30;
@@ -127,8 +156,27 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
         <div className="text-xs text-foreground/60">Quote</div>
         <div className="mt-1 text-lg font-medium">{quote.customer_name ?? "Customer"}</div>
         <div className="mt-1 text-sm text-foreground/70">
-          {quote.trade} · {quote.created_at ? new Date(quote.created_at).toLocaleDateString() : ""}
+          {quote.trade} · {createdLabel ?? ""}
         </div>
+
+        {expiresAtLabel ? (
+          <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-foreground/80">
+            {isExpired ? (
+              <Badge variant="secondary" className="mb-2 border-destructive/40 bg-destructive/15 text-destructive">
+                Expired
+              </Badge>
+            ) : expiration.isExpiringSoon ? (
+              <Badge variant="outline" className="mb-2 border-amber-500/40 text-amber-300">
+                {expiresSoonText ?? "Expiring soon"}
+              </Badge>
+            ) : null}
+            {isExpired
+              ? `This quote expired on ${expiresAtLabel}. Contact your contractor to refresh pricing and availability.`
+              : expiration.isExpiringSoon
+              ? `${expiresSoonText ?? "Expiring soon"} · valid through ${expiresAtLabel}.`
+              : `This quote is valid through ${expiresAtLabel}.`}
+          </div>
+        ) : null}
 
         <div className="mt-6 rounded-xl border p-4">
           <div className="flex items-center justify-between">
@@ -151,10 +199,22 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
           </div>
 
           <div className="rounded-xl border p-4 text-sm">
-            <div className="font-medium">Estimated timeline</div>
-            <div className="mt-2 text-foreground/70">
-              Most jobs complete in 1–3 days depending on size/weather.
-            </div>
+            <div className="font-medium">What’s excluded</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-foreground/70">
+              <li>Hidden structural repairs discovered after tear-off</li>
+              <li>Permit fees unless explicitly listed by contractor</li>
+              <li>Change requests not included in this scope</li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border p-4 text-sm">
+            <div className="font-medium">Timeline of work</div>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-foreground/70">
+              <li>Approval and scheduling confirmation</li>
+              <li>Material delivery and site preparation</li>
+              <li>Installation and daily cleanup (typically 1–3 days)</li>
+              <li>Final walkthrough and closeout</li>
+            </ol>
           </div>
 
           <div className="rounded-xl border p-4 text-sm">
@@ -174,7 +234,11 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
             </div>
 
             <div className="mt-2 text-foreground/70">
-              Deposit due today: <span className="font-medium">{money(depositDueDollars)}</span>
+              To reserve your spot, deposit due today:{" "}
+              <span className="font-medium">{money(depositDueDollars)}</span>
+            </div>
+            <div className="mt-2 text-xs text-foreground/60">
+              The remaining balance is handled directly with your contractor at completion.
             </div>
 
             {depositMessage ? (
@@ -184,6 +248,10 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
             {depositPaid ? (
               <div className="mt-3 rounded-lg border p-2 text-xs">
                 ✅ Deposit paid — the contractor has been notified.
+              </div>
+            ) : isExpired ? (
+              <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                Quote is expired. Deposit payment is no longer available.
               </div>
             ) : (
               <div className="mt-3">
@@ -197,7 +265,11 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
         ) : null}
 
         {/* Approve (client-side: approve → maybe redirect later) */}
-        {approved ? null : (
+        {approved ? null : isExpired ? (
+          <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            This quote has expired and can no longer be approved online.
+          </div>
+        ) : (
           <div className="mt-6">
             <ApproveAndMaybePayButton
               token={token}
