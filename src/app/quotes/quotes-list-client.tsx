@@ -60,6 +60,7 @@ export default function QuotesListClient({
 }) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<QuoteRow[]>(rows);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   async function deleteQuote(id: string) {
     const ok = window.confirm("Delete this quote? This cannot be undone.");
@@ -79,6 +80,28 @@ export default function QuotesListClient({
     } catch {
       alert("Delete failed.");
       setItems(prev);
+    }
+  }
+
+  async function duplicateQuote(id: string) {
+    if (duplicatingId) return;
+    setDuplicatingId(id);
+
+    try {
+      const res = await fetch(`/api/quotes/${id}/duplicate`, { method: "POST" });
+      const json = (await res.json().catch(() => ({}))) as {
+        id?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !json.id) {
+        alert(json.error ?? "Duplicate failed.");
+        return;
+      }
+
+      window.location.href = `/quotes/${json.id}/edit`;
+    } finally {
+      setDuplicatingId(null);
     }
   }
 
@@ -130,6 +153,15 @@ export default function QuotesListClient({
 
                 {/* RIGHT */}
                 <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={Boolean(duplicatingId)}
+                    onClick={() => duplicateQuote(row.id)}
+                  >
+                    {duplicatingId === row.id ? "Duplicating..." : "Duplicate"}
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"
