@@ -190,8 +190,33 @@ export default function QuotesListClient({
         })}
 
         {filtered.length === 0 && (
-          <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-            No quotes found
+          <div className="px-4 py-10">
+            {items.length === 0 && query.trim().length === 0 ? (
+              <div className="mx-auto max-w-xl space-y-4 text-center">
+                <div className="text-base font-medium">No quotes yet</div>
+                <div className="text-sm text-muted-foreground">
+                  Create your first quote in minutes. Set pricing once, send the quote, and track views and follow-up from your dashboard.
+                </div>
+                <div className="grid gap-2 text-left text-sm text-foreground/75">
+                  <div className="rounded-lg border bg-background/40 p-3">1. Confirm your pricing and margin targets.</div>
+                  <div className="rounded-lg border bg-background/40 p-3">2. Turn on deposits to reduce late cancellations.</div>
+                  <div className="rounded-lg border bg-background/40 p-3">3. Create and send your first quote.</div>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button asChild size="sm">
+                    <Link href="/quotes/new">Create first quote</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/settings/roofing">Pricing</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/settings/billing">Deposits</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-sm text-muted-foreground">No quotes found</div>
+            )}
           </div>
         )}
       </div>

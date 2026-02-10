@@ -50,14 +50,14 @@ export function MobileMenu() {
   function Overlay() {
     return (
       <div
-        className="fixed inset-0 z-[2147483647] bg-background"
+        className="fixed inset-0 z-[2147483647] bg-background/96 backdrop-blur-xl"
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
           <Link
             href="/dashboard"
-            className="text-sm font-medium tracking-wide hover:opacity-90 transition"
+            className="text-[1.05rem] font-semibold tracking-[0.16em] uppercase transition hover:opacity-90"
             onClick={() => setOpen(false)}
           >
             Forman
@@ -65,21 +65,21 @@ export function MobileMenu() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-md p-2 text-foreground/70 hover:text-foreground transition"
+            className="rounded-lg p-2 text-foreground/70 transition hover:bg-white/8 hover:text-foreground"
             aria-label="Close menu"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="px-4 py-5">
+        <div className="px-4 py-6">
           <BillingStatusBadge />
 
           <nav className="mt-6 space-y-2">
             {/* New Quote styled like the other items */}
             <NewQuoteButton
               appearance="nav"
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-foreground/70 hover:bg-white/5 hover:text-foreground transition"
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-foreground/70 transition hover:bg-white/8 hover:text-foreground"
             />
 
             {NAV.map((item) => {
@@ -89,10 +89,10 @@ export function MobileMenu() {
                   key={item.href}
                   href={item.href}
                   className={[
-                    "block rounded-xl px-3 py-2 text-sm transition",
+                    "block rounded-xl px-3 py-2 text-sm font-medium transition",
                     active
-                      ? "bg-white/5 text-foreground"
-                      : "text-foreground/70 hover:bg-white/5 hover:text-foreground",
+                      ? "border border-primary/35 bg-primary/15 text-foreground"
+                      : "text-foreground/70 hover:bg-white/8 hover:text-foreground",
                   ].join(" ")}
                 >
                   {item.label}
@@ -105,7 +105,7 @@ export function MobileMenu() {
             <form action="/auth/sign-out" method="post">
               <button
                 type="submit"
-                className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-foreground/80 hover:bg-white/5 transition"
+                className="w-full rounded-xl border border-white/15 bg-background/40 px-3 py-2 text-sm font-medium text-foreground/80 transition hover:bg-white/8"
               >
                 Sign out
               </button>
@@ -121,7 +121,7 @@ export function MobileMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md p-2 text-foreground/70 hover:text-foreground transition"
+        className="rounded-lg p-2 text-foreground/70 transition hover:bg-white/8 hover:text-foreground"
         aria-label="Open menu"
       >
         <Menu size={20} />

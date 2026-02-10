@@ -108,12 +108,17 @@ export function RoofingSettingsForm({
 }: {
   initialRates: RoofingRateCard;
 }) {
+  const RECOMMENDED_DEPOSIT_PERCENT = 20;
+  const DEPOSIT_SUGGESTIONS = [10, RECOMMENDED_DEPOSIT_PERCENT, 30];
+
   const [rateStatus, setRateStatus] = React.useState<
     null | "saving" | "saved" | "error"
   >(null);
 
   // Deposit settings state (separate from rate card form)
-  const [depositPercent, setDepositPercent] = React.useState<number>(25);
+  const [depositPercent, setDepositPercent] = React.useState<number>(
+    RECOMMENDED_DEPOSIT_PERCENT
+  );
   const [acceptDepositsOnShare, setAcceptDepositsOnShare] = React.useState<boolean>(false);
   const [depositStatus, setDepositStatus] = React.useState<
     null | "loading" | "saving" | "saved" | "error"
@@ -146,7 +151,7 @@ export function RoofingSettingsForm({
         if (Number.isFinite(v) && v >= 0 && v <= 100) {
           setDepositPercent(v);
         } else {
-          setDepositPercent(25);
+          setDepositPercent(RECOMMENDED_DEPOSIT_PERCENT);
         }
 
         setAcceptDepositsOnShare(Boolean(json.acceptDepositsOnShare));
@@ -230,7 +235,7 @@ export function RoofingSettingsForm({
 
         <FieldRow
           label="Deposit percent"
-          hint="Customers can pay a deposit after approving a quote (Stripe)."
+          hint={`Industry standard is often 10–30%. ${RECOMMENDED_DEPOSIT_PERCENT}% is a common starting point.`}
         >
           <PercentInput
             value={depositPercent}
@@ -239,6 +244,28 @@ export function RoofingSettingsForm({
             max={100}
           />
         </FieldRow>
+
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="text-xs text-foreground/60">
+            Suggested deposit settings for quote approvals:
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {DEPOSIT_SUGGESTIONS.map((pct) => (
+              <Button
+                key={pct}
+                type="button"
+                variant={depositPercent === pct ? "secondary" : "outline"}
+                onClick={() => setDepositPercent(pct)}
+              >
+                {pct}% {pct === RECOMMENDED_DEPOSIT_PERCENT ? "(Recommended)" : ""}
+              </Button>
+            ))}
+          </div>
+          <div className="mt-2 text-xs text-foreground/60">
+            Lower deposits can reduce friction on approval. Higher deposits can reduce
+            cancellations on larger jobs.
+          </div>
+        </div>
 
         <FieldRow
           label="Accept deposits on share links"

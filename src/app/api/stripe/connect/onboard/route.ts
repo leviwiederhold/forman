@@ -16,10 +16,12 @@ function getOrigin(req: NextRequest) {
 
 async function handler(req: NextRequest) {
   const origin = getOrigin(req);
+  const errorUrl = new URL("/settings/billing?connect=error", origin);
 
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (!stripeKey) {
-    return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+    console.error("Missing STRIPE_SECRET_KEY");
+    return NextResponse.redirect(errorUrl, 303);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -36,7 +38,8 @@ async function handler(req: NextRequest) {
     .maybeSingle<{ stripe_account_id: string }>();
 
   if (selErr) {
-    return NextResponse.json({ error: "DB read failed", detail: selErr.message }, { status: 500 });
+    console.error("Stripe connect read failed:", selErr.message);
+    return NextResponse.redirect(errorUrl, 303);
   }
 
   let accountId = existing?.stripe_account_id ?? null;
@@ -64,7 +67,8 @@ async function handler(req: NextRequest) {
     });
 
     if (insErr) {
-      return NextResponse.json({ error: "DB insert failed", detail: insErr.message }, { status: 500 });
+      console.error("Stripe connect insert failed:", insErr.message);
+      return NextResponse.redirect(errorUrl, 303);
     }
   }
 

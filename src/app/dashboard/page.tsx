@@ -54,6 +54,39 @@ function fmtDate(iso: string) {
   });
 }
 
+function buildWeeklyReminder(rows30: QuoteRow[]): string | null {
+  if (!rows30.length) return null;
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const weekRows = rows30.filter((r) => new Date(r.created_at) >= weekAgo);
+  if (!weekRows.length) {
+    return "Weekly reminder: no quotes sent in the last 7 days. Send at least 3 quotes this week to keep your pipeline warm.";
+  }
+
+  const accepted = weekRows.filter((r) => (r.status ?? "").toLowerCase() === "accepted");
+  const closeRate = (accepted.length / weekRows.length) * 100;
+  const avgMargin =
+    weekRows.reduce((sum, r) => sum + calculateEffectiveMargin(r.pricing_json).marginPct, 0) /
+    weekRows.length;
+
+  if (avgMargin < 25) {
+    return `Weekly reminder: average margin is ${avgMargin.toFixed(
+      1
+    )}% this week. Tighten pricing on new quotes before discounting.`;
+  }
+
+  if (closeRate < 30) {
+    return `Weekly reminder: close rate is ${closeRate.toFixed(
+      0
+    )}% this week. Follow up within 24 hours on open quotes to improve conversion.`;
+  }
+
+  return `Weekly reminder: you're at ${closeRate.toFixed(
+    0
+  )}% close rate with ${avgMargin.toFixed(1)}% margin this week. Keep pricing discipline and continue quick follow-up.`;
+}
+
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
 
@@ -151,22 +184,23 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
   const avgMargin = count ? marginSum / count : 0;
 
   const headline = !setupComplete
-    ? "Finish setup"
+    ? "Complete setup"
     : count === 0
     ? "Create your first quote"
-    : "This month at a glance";
+    : "Monthly snapshot";
 
   const subhead = !setupComplete
-    ? "A couple quick steps and you'll be ready to send quotes."
+    ? "Complete these steps once to start sending quotes with confidence."
     : count === 0
-    ? "Once you send a quote, your stats and insights will show up here."
-    : "A quick snapshot of your last 30 days.";
+    ? "Performance and recommendations will appear after your first quote."
+    : "A clear view of your last 30 days.";
+  const weeklyReminder = buildWeeklyReminder(rows30);
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
+    <main className="mx-auto max-w-6xl space-y-8 p-6">
       <div className="space-y-1">
-        <h1 className="text-lg font-light tracking-wide">{headline}</h1>
-        <div className="text-xs text-foreground/60">{subhead}</div>
+        <h1 className="text-xl font-medium tracking-tight">{headline}</h1>
+        <div className="text-sm text-foreground/65">{subhead}</div>
       </div>
 
       <Separator />
@@ -179,6 +213,23 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
         />
       ) : null}
 
+      {!setup.hasQuote ? (
+        <section className="rounded-2xl border bg-card p-5">
+          <div className="text-sm font-medium">Send your first quote in under 5 minutes</div>
+          <div className="mt-1 text-sm text-foreground/70">
+            Start with customer details, confirm scope, then send. You will immediately see view status, expiry, and follow-up prompts.
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/quotes/new">Start first quote</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/settings/roofing">Check pricing</Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Quoted (30d)" value={fmtMoney(totalQuoted)} />
         <Kpi label="Win rate" value={`${winRate.toFixed(1)}%`} />
@@ -186,17 +237,29 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
         <Kpi label="Avg margin" value={`${avgMargin.toFixed(1)}%`} />
       </div>
 
-      <section className="space-y-3">
+      {weeklyReminder ? (
+        <section className="rounded-2xl border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-foreground/55">Weekly reminder</div>
+          <div className="mt-1 text-sm text-foreground/80">{weeklyReminder}</div>
+          <div className="mt-3">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/reports">Review insights</Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="space-y-4">
         <div>
-          <div className="text-sm text-foreground/70">Needs attention</div>
+          <div className="text-sm font-medium text-foreground/85">Needs attention</div>
           <div className="text-xs text-foreground/50">
             Quotes below {TARGET_MARGIN}% margin (30 days)
           </div>
         </div>
 
         {flagged.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-4 text-sm text-foreground/70">
-            No low-margin quotes. Nice work.
+          <div className="rounded-2xl border bg-card p-5 text-sm text-foreground/70">
+            No low-margin quotes in the last 30 days.
           </div>
         ) : (
           <div className="rounded-2xl border bg-card divide-y">
@@ -226,8 +289,8 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
         )}
       </section>
 
-      <section className="space-y-3">
-        <div className="text-sm text-foreground/70">Recent quotes</div>
+      <section className="space-y-4">
+        <div className="text-sm font-medium text-foreground/85">Recent quotes</div>
 
         {rows5.length === 0 ? (
           <div className="rounded-2xl border bg-card p-6">
@@ -280,19 +343,19 @@ function SetupChecklist({
       label: "Set your pricing",
       done: pricingSet,
       href: "/settings/roofing",
-      helper: "These rates power your quote totals.",
+      helper: "These rates drive quote totals.",
     },
     {
       label: "Connect Stripe",
       done: stripeConnected,
       href: "/settings/billing",
-      helper: "So customers can pay deposits directly to you.",
+      helper: "Enable customer deposits and online payments.",
     },
     {
       label: "Create your first quote",
       done: hasQuote,
       href: "/quotes/new",
-      helper: "Takes about 60 seconds once pricing is set.",
+      helper: "Once sent, your dashboard insights unlock.",
     },
   ];
 
@@ -303,9 +366,9 @@ function SetupChecklist({
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-sm text-foreground/70">Setup</div>
-          <div className="text-lg font-medium">Complete these once</div>
+          <div className="text-lg font-medium">One-time setup</div>
           <div className="text-xs text-foreground/60">
-            {doneCount}/3 complete · Most roofers finish this in under 5 minutes.
+            {doneCount}/3 complete.
           </div>
         </div>
       </div>
@@ -339,9 +402,9 @@ function SetupChecklist({
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-4 transition will-change-transform hover:-translate-y-0.5 hover:shadow-sm">
+    <div className="rounded-2xl border bg-card p-5">
       <div className="text-xs text-foreground/60">{label}</div>
-      <div className="mt-1 text-lg font-light tracking-wide">{value}</div>
+      <div className="mt-1 text-xl font-medium tracking-tight">{value}</div>
     </div>
   );
 }

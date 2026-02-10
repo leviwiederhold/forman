@@ -12,6 +12,7 @@ import {
 } from "@/trades/roofing/schema";
 
 import { calculateRoofingQuote, type SavedCustomItem } from "@/trades/roofing/pricing";
+import { buildHistoricalPricingGuidance } from "@/lib/quotes/historical-pricing";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,14 +60,18 @@ export function NewQuoteClient({
   customItems,
   editId,
   initialPayload,
+  historicalSamples = [],
 }: {
   rates: RoofingRateCard;
   customItems: SavedCustomItem[];
   editId?: string;
   initialPayload?: RoofingNewQuote;
+  historicalSamples?: Array<{ total: number | null; inputs_json: unknown }>;
 }) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
+  const [isSavingDefaults, setIsSavingDefaults] = React.useState(false);
+  const [defaultsMsg, setDefaultsMsg] = React.useState<string | null>(null);
 
   const resolver =
     zodResolver(RoofingNewQuoteSchema) as unknown as Resolver<RoofingNewQuote>;
@@ -118,6 +123,23 @@ export function NewQuoteClient({
       savedCustomItems: customItems,
     });
   }, [inputs, selections, rates, customItems]);
+
+  const historical = React.useMemo(
+    () =>
+      buildHistoricalPricingGuidance({
+        samples: historicalSamples,
+        currentRoofSizeValue: inputs.roof_size_value,
+        currentRoofSizeUnit: inputs.roof_size_unit,
+      }),
+    [historicalSamples, inputs.roof_size_unit, inputs.roof_size_value]
+  );
+
+  const historicalVariancePct = React.useMemo(() => {
+    if (!historical.recommendedTotal || !pricing.total || historical.recommendedTotal <= 0) {
+      return null;
+    }
+    return ((pricing.total - historical.recommendedTotal) / historical.recommendedTotal) * 100;
+  }, [historical.recommendedTotal, pricing.total]);
 
   // keep layers + tearoff checkbox in sync
   React.useEffect(() => {
@@ -244,6 +266,47 @@ export function NewQuoteClient({
       setSaveMsg(safeMessage(e));
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveAsDefaults() {
+    setIsSavingDefaults(true);
+    setDefaultsMsg(null);
+    try {
+      const payload = form.getValues();
+      const defaults = {
+        inputs: {
+          roof_size_value: payload.inputs.roof_size_value,
+          roof_size_unit: payload.inputs.roof_size_unit,
+          pitch: payload.inputs.pitch,
+          stories: payload.inputs.stories,
+          tearoff: payload.inputs.tearoff,
+          layers: payload.inputs.layers,
+        },
+        selections: {
+          ridge_vent_selected: payload.selections.ridge_vent_selected,
+          drip_edge_selected: payload.selections.drip_edge_selected,
+          ice_water_selected: payload.selections.ice_water_selected,
+          steep_charge_selected: payload.selections.steep_charge_selected,
+          permit_fee_selected: payload.selections.permit_fee_selected,
+          tearoff_selected: payload.selections.tearoff_selected,
+        },
+      };
+
+      const res = await fetch("/api/profile/quote-defaults", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ defaults }),
+      });
+      if (!res.ok) {
+        setDefaultsMsg("Could not save defaults.");
+        return;
+      }
+      setDefaultsMsg("Defaults saved.");
+    } catch {
+      setDefaultsMsg("Could not save defaults.");
+    } finally {
+      setIsSavingDefaults(false);
     }
   }
 
@@ -511,9 +574,14 @@ export function NewQuoteClient({
         <Separator />
 
         <div className="flex items-center justify-between">
-          <Button type="button" variant="secondary" onClick={addOneTimeItem}>
-            Add one-time item
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="secondary" onClick={addOneTimeItem}>
+              Add one-time item
+            </Button>
+            <Button type="button" variant="outline" onClick={saveAsDefaults} disabled={isSavingDefaults}>
+              {isSavingDefaults ? "Saving defaults..." : "Save as defaults"}
+            </Button>
+          </div>
 
           <Button type="button" onClick={saveQuote} disabled={isSaving}>
             {isSaving ? "Saving..." : editId ? "Save Changes" : "Save Quote"}
@@ -521,6 +589,7 @@ export function NewQuoteClient({
         </div>
 
         {saveMsg ? <div className="text-xs text-destructive">{saveMsg}</div> : null}
+        {defaultsMsg ? <div className="text-xs text-foreground/70">{defaultsMsg}</div> : null}
 
         {/* One-time items editor */}
         {selections.one_time_custom_items.length > 0 ? (
@@ -663,6 +732,27 @@ export function NewQuoteClient({
             </div>
           </div>
         </div>
+
+        {historical.sampleCount >= 5 && historical.recommendedTotal ? (
+          <div className="rounded-xl border p-3 text-sm">
+            <div className="text-foreground/80">Historical pricing guide</div>
+            <div className="mt-1 text-xs text-foreground/60">
+              Based on {historical.sampleCount} recent quotes at about $
+              {historical.medianPricePerSquare?.toFixed(0) ?? "0"} per square.
+            </div>
+            <div className="mt-2 text-foreground/75">
+              Typical range for this roof size: $
+              {(historical.lowerRangeTotal ?? 0).toFixed(0)} to $
+              {(historical.upperRangeTotal ?? 0).toFixed(0)}.
+            </div>
+            {typeof historicalVariancePct === "number" && Math.abs(historicalVariancePct) >= 8 ? (
+              <div className="mt-2 text-xs text-amber-300">
+                Current total is {Math.abs(historicalVariancePct).toFixed(1)}%{" "}
+                {historicalVariancePct >= 0 ? "above" : "below"} your recent baseline.
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="rounded-xl border p-3 text-sm">
           <div className="text-foreground/80">Line items</div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getStripeConnectStatus } from "@/lib/billing/stripe-connect-status";
 
 export async function POST() {
   const supabase = await createSupabaseServerClient();
@@ -29,16 +30,30 @@ export async function POST() {
     apiVersion: "2025-12-15.clover",
   });
 
-  const account = await stripe.accounts.retrieve(
-    connect.stripe_account_id
-  );
+  try {
+    const account = await stripe.accounts.retrieve(connect.stripe_account_id);
 
-  await admin
-    .from("stripe_connect_accounts")
-    .update({
-      charges_enabled: account.charges_enabled,
-    })
-    .eq("user_id", user.id);
+    await admin
+      .from("stripe_connect_accounts")
+      .update({
+        charges_enabled: account.charges_enabled,
+        payouts_enabled: account.payouts_enabled,
+        details_submitted: account.details_submitted,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id);
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      status: getStripeConnectStatus({
+        stripe_account_id: connect.stripe_account_id,
+        charges_enabled: account.charges_enabled,
+        payouts_enabled: account.payouts_enabled,
+        details_submitted: account.details_submitted,
+      }),
+    });
+  } catch (error) {
+    console.error("Stripe connect sync failed:", error);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
 }
