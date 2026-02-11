@@ -257,9 +257,29 @@ export function NewQuoteClient({
 
       const quoteId = editId
         ? editId
-        : typeof json === "object" && json !== null && "quote_id" in json
-          ? String((json as { quote_id?: unknown }).quote_id ?? "")
+        : typeof json === "object" && json !== null
+          ? String(
+              (
+                json as {
+                  id?: unknown;
+                  quote_id?: unknown;
+                }
+              ).id ??
+                (
+                  json as {
+                    id?: unknown;
+                    quote_id?: unknown;
+                  }
+                ).quote_id ??
+                ""
+            )
           : "";
+
+      if (!quoteId) {
+        setSaveMsg("Saved, but missing quote id.");
+        setIsSaving(false);
+        return;
+      }
 
       window.location.href = `/quotes/${quoteId}`;
     } catch (e: unknown) {

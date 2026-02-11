@@ -40,7 +40,6 @@ export function QuoteActions({
   monthlyTargetWarning,
 }: Props) {
   const router = useRouter();
-  const [copied, setCopied] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [guardBusy, setGuardBusy] = React.useState(false);
   const [ackAt, setAckAt] = React.useState<string | null>(acknowledgedAt);
@@ -51,6 +50,32 @@ export function QuoteActions({
   const marginPct = calcMarginPct(subtotal, total);
   const isLowMargin = marginPct < TARGET_MARGIN;
   const isAcknowledged = Boolean(ackAt);
+
+  async function ensureShareUrl() {
+    if (shareToken) {
+      return new URL(`/quotes/share/${shareToken}`, window.location.origin).toString();
+    }
+
+    const res = await fetch(`/api/quotes/${id}/share`, { method: "POST" });
+    const json = (await res.json().catch(() => ({}))) as {
+      url?: string;
+      token?: string;
+      error?: string;
+    };
+    if (!res.ok) {
+      throw new Error(json.error ?? "Could not create share link.");
+    }
+
+    const path = json.url ?? (json.token ? `/quotes/share/${json.token}` : "");
+    if (!path) throw new Error("Share link missing.");
+
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+
+    const normalized = path.startsWith("/") ? path : `/quotes/share/${path}`;
+    return new URL(normalized, window.location.origin).toString();
+  }
 
   async function acknowledgeLowMargin(): Promise<boolean> {
     const res = await fetch(`/api/quotes/${id}/acknowledge-low-margin`, {
@@ -79,41 +104,33 @@ export function QuoteActions({
   }
 
   async function onCopyLink() {
-    if (!shareToken) {
-      alert("Missing share token for this quote.");
-      return;
-    }
-
     setGuardError(null);
     const ok = await requireGuardrail();
     setGuardBusy(false);
     if (!ok) return;
 
-    const url = new URL(
-      `/quotes/share/${shareToken}`,
-      window.location.origin
-    ).toString();
-
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      const url = await ensureShareUrl();
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create share link.");
+    }
   }
 
   async function onEmail() {
-    if (!shareToken) {
-      alert("Missing share token for this quote.");
-      return;
-    }
-
     setGuardError(null);
     const ok = await requireGuardrail();
     setGuardBusy(false);
     if (!ok) return;
-
-    const url = new URL(
-      `/quotes/share/${shareToken}`,
-      window.location.origin
-    ).toString();
+    let url = "";
+    try {
+      url = await ensureShareUrl();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create share link.");
+      return;
+    }
 
     const subject = "Here is your quote";
     const body =
