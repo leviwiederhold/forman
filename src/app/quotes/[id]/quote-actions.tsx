@@ -120,6 +120,22 @@ export function QuoteActions({
     }
   }
 
+  async function onShare() {
+    setGuardError(null);
+    const ok = await requireGuardrail();
+    setGuardBusy(false);
+    if (!ok) return;
+
+    try {
+      const url = await ensureShareUrl();
+      const parsed = new URL(url);
+      router.push(`${parsed.pathname}${parsed.search}`);
+      router.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create share link.");
+    }
+  }
+
   async function onEmail() {
     setGuardError(null);
     const ok = await requireGuardrail();
@@ -226,6 +242,10 @@ export function QuoteActions({
 
         <Button asChild variant="outline">
           <Link href={`/api/quotes/${id}/pdf`}>Download PDF</Link>
+        </Button>
+
+        <Button variant="outline" onClick={onShare} disabled={blockSend || sendBusy}>
+          {sendBusy ? "Sending..." : "Share"}
         </Button>
 
         <Button variant="outline" onClick={onCopyLink} disabled={blockSend || sendBusy}>
