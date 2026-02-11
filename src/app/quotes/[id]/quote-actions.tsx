@@ -40,6 +40,7 @@ export function QuoteActions({
   monthlyTargetWarning,
 }: Props) {
   const router = useRouter();
+  const [copied, setCopied] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [guardBusy, setGuardBusy] = React.useState(false);
   const [ackAt, setAckAt] = React.useState<string | null>(acknowledgedAt);
