@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -58,13 +59,23 @@ export default function QuotesListClient({
 }: {
   rows?: QuoteRow[];
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<QuoteRow[]>(rows);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(rows);
+  }, [rows]);
 
   async function deleteQuote(id: string) {
+    if (deletingId) return;
+
     const ok = window.confirm("Delete this quote? This cannot be undone.");
     if (!ok) return;
+
+    setDeletingId(id);
 
     // Optimistic remove
     const prev = items;
@@ -76,10 +87,15 @@ export default function QuotesListClient({
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
         setItems(prev);
+        return;
       }
+
+      router.refresh();
     } catch {
       alert("Delete failed.");
       setItems(prev);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -166,9 +182,10 @@ export default function QuotesListClient({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    disabled={Boolean(deletingId)}
                     onClick={() => deleteQuote(row.id)}
                   >
-                    Delete
+                    {deletingId === row.id ? "Deleting..." : "Delete"}
                   </Button>
 
                   <div className="flex flex-col items-end gap-1">
