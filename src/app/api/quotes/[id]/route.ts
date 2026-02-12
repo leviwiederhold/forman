@@ -177,11 +177,21 @@ export async function DELETE(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", auth.user.id)
+    .single<{ id: string }>();
+
+  if (profileError || !profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
+  }
+
   const { data: deletedRows, error } = await supabase
     .from("quotes")
     .delete()
     .eq("id", id)
-    .eq("user_id", auth.user.id)
+    .eq("profile_id", profile.id)
     .select("id");
 
   if (error) {

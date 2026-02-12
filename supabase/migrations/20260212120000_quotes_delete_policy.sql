@@ -12,6 +12,6 @@ begin
     create policy "quotes_delete_own"
       on public.quotes
       for delete
-      using (auth.uid() = user_id);
+      using (auth.uid() = profile_id);
   end if;
 end $$;

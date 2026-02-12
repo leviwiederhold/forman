@@ -77,23 +77,18 @@ export default function QuotesListClient({
 
     setDeletingId(id);
 
-    // Optimistic remove
-    const prev = items;
-    setItems((cur) => cur.filter((q) => q.id !== id));
-
     try {
       const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
-        setItems(prev);
         return;
       }
 
+      setItems((cur) => cur.filter((q) => q.id !== id));
       router.refresh();
     } catch {
       alert("Delete failed.");
-      setItems(prev);
     } finally {
       setDeletingId(null);
     }
