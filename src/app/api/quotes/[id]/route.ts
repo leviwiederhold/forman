@@ -177,14 +177,18 @@ export async function DELETE(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from("quotes")
-    .delete()
+    .delete({ count: "exact" })
     .eq("id", id)
     .eq("user_id", auth.user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!count) {
+    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });

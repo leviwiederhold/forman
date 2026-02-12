@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -58,9 +59,14 @@ export default function QuotesListClient({
 }: {
   rows?: QuoteRow[];
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<QuoteRow[]>(rows);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(rows);
+  }, [rows]);
 
   async function deleteQuote(id: string) {
     const ok = window.confirm("Delete this quote? This cannot be undone.");
@@ -76,7 +82,10 @@ export default function QuotesListClient({
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
         setItems(prev);
+        return;
       }
+
+      router.refresh();
     } catch {
       alert("Delete failed.");
       setItems(prev);

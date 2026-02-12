@@ -27,7 +27,7 @@ export function DeleteQuoteButton({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/quotes/${quoteId}`, { method: "DELETE" });
+      const res = await fetch(`/api/quotes/${quoteId}`, { method: "DELETE", cache: "no-store" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
@@ -36,9 +36,9 @@ export function DeleteQuoteButton({
 
       if (afterDeleteHref) {
         router.push(afterDeleteHref);
-      } else {
-        router.refresh();
       }
+
+      router.refresh();
     } finally {
       setLoading(false);
     }
