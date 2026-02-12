@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PayDepositButton } from "@/components/pay-deposit-button";
 import { ApproveAndMaybePayButton } from "@/components/approve-and-maybe-pay-button";
@@ -59,9 +58,9 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
   const approvedViaQuery =
     sp.approved === "1" || (Array.isArray(sp.approved) && sp.approved[0] === "1");
 
-  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
 
-  const { data: quote, error } = await supabase
+  const { data: quote, error } = await admin
     .from("quotes")
     .select(
       "id, user_id, trade, customer_name, customer_address, status, subtotal, tax, total, created_at, expires_at, share_token, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
@@ -73,7 +72,7 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
 
   // Record client view (idempotent row via upsert in DB function).
   // We intentionally keep this non-blocking for page rendering.
-  const { error: viewTrackError } = await supabase.rpc("track_quote_view", {
+  const { error: viewTrackError } = await admin.rpc("track_quote_view", {
     p_quote_id: quote.id,
     p_token: token,
   });
@@ -83,8 +82,6 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
 
   // IMPORTANT: share page is public → RLS blocks profiles/stripe_connect_accounts via anon client
   // Use admin client for these two lookups so the prospect can see deposit option if roofer enabled it.
-  const admin = createSupabaseAdminClient();
-
   // Load roofer deposit preference + payments readiness
   const [{ data: prof }, { data: acct }] = await Promise.all([
     admin

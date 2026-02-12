@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ShareLinkButton } from "@/components/quotes/ShareLinkButton";
 
 type QuoteRow = {
   id: string;
@@ -58,25 +60,32 @@ export default function QuotesListClient({
 }: {
   rows?: QuoteRow[];
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<QuoteRow[]>(rows);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(rows);
+  }, [rows]);
 
   async function deleteQuote(id: string) {
     const ok = window.confirm("Delete this quote? This cannot be undone.");
     if (!ok) return;
 
-    // Optimistic remove
     const prev = items;
     setItems((cur) => cur.filter((q) => q.id !== id));
 
     try {
-      const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/quotes/${id}`, { method: "DELETE", cache: "no-store" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
         setItems(prev);
+        return;
       }
+
+      router.refresh();
     } catch {
       alert("Delete failed.");
       setItems(prev);
@@ -136,23 +145,35 @@ export default function QuotesListClient({
           return (
             <div
               key={row.id}
-              className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+              className="flex flex-col gap-3 px-4 py-3 hover:bg-muted/40 transition-colors sm:flex-row sm:items-center sm:justify-between"
             >
-                {/* LEFT */}
-                <Link href={`/quotes/${row.id}`} className="min-w-0 flex-1">
-                  <div className="space-y-1">
-                    <div className="font-medium leading-none">
-                      {row.customer_name || "Unnamed customer"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {row.trade} · {row.status ?? "draft"} ·{" "}
-                      {new Date(row.created_at).toLocaleDateString()}
-                    </div>
+              <Link href={`/quotes/${row.id}`} className="min-w-0 sm:flex-1">
+                <div className="space-y-1">
+                  <div className="font-medium leading-none">
+                    {row.customer_name || "Unnamed customer"}
                   </div>
-                </Link>
+                  <div className="text-xs text-muted-foreground">
+                    {row.trade} · {row.status ?? "draft"} ·{" "}
+                    {new Date(row.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </Link>
 
-                {/* RIGHT */}
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-2 sm:items-end">
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
+                      meta.className
+                    )}
+                  >
+                    {meta.label}
+                  </span>
+                  <div className="text-sm text-foreground/85">{fmtMoney(total)}</div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+                  <ShareLinkButton quoteId={row.id} size="sm" variant="ghost" />
                   <Button
                     type="button"
                     variant="ghost"
@@ -170,21 +191,8 @@ export default function QuotesListClient({
                   >
                     Delete
                   </Button>
-
-                  <div className="flex flex-col items-end gap-1">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
-                      meta.className
-                    )}
-                  >
-                    {meta.label}
-                  </span>
-                  <div className="text-sm text-foreground/85">
-                    {fmtMoney(total)}
-                  </div>
-                  </div>
                 </div>
+              </div>
             </div>
           );
         })}
