@@ -177,18 +177,29 @@ export async function DELETE(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { error, count } = await supabase
+  const { data: exists, error: fetchErr } = await supabase
     .from("quotes")
-    .delete({ count: "exact" })
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .maybeSingle<{ id: string }>();
+
+  if (fetchErr) {
+    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+  }
+
+  if (!exists) {
+    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  }
+
+  const { error } = await supabase
+    .from("quotes")
+    .delete()
     .eq("id", id)
     .eq("user_id", auth.user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  if (!count) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });

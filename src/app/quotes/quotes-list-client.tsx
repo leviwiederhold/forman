@@ -73,7 +73,6 @@ export default function QuotesListClient({
     const ok = window.confirm("Delete this quote? This cannot be undone.");
     if (!ok) return;
 
-    // Optimistic remove
     const prev = items;
     setItems((cur) => cur.filter((q) => q.id !== id));
 
@@ -146,23 +145,34 @@ export default function QuotesListClient({
           return (
             <div
               key={row.id}
-              className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+              className="flex flex-col gap-3 px-4 py-3 hover:bg-muted/40 transition-colors sm:flex-row sm:items-center sm:justify-between"
             >
-                {/* LEFT */}
-                <Link href={`/quotes/${row.id}`} className="min-w-0 flex-1">
-                  <div className="space-y-1">
-                    <div className="font-medium leading-none">
-                      {row.customer_name || "Unnamed customer"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {row.trade} · {row.status ?? "draft"} ·{" "}
-                      {new Date(row.created_at).toLocaleDateString()}
-                    </div>
+              <Link href={`/quotes/${row.id}`} className="min-w-0 sm:flex-1">
+                <div className="space-y-1">
+                  <div className="font-medium leading-none">
+                    {row.customer_name || "Unnamed customer"}
                   </div>
-                </Link>
+                  <div className="text-xs text-muted-foreground">
+                    {row.trade} · {row.status ?? "draft"} ·{" "}
+                    {new Date(row.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </Link>
 
-                {/* RIGHT */}
-                <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex flex-col gap-2 sm:items-end">
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
+                      meta.className
+                    )}
+                  >
+                    {meta.label}
+                  </span>
+                  <div className="text-sm text-foreground/85">{fmtMoney(total)}</div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1 sm:justify-end">
                   <ShareLinkButton quoteId={row.id} size="sm" variant="ghost" />
                   <Button
                     type="button"
@@ -181,21 +191,8 @@ export default function QuotesListClient({
                   >
                     Delete
                   </Button>
-
-                  <div className="ml-1 flex flex-col items-end gap-1">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
-                      meta.className
-                    )}
-                  >
-                    {meta.label}
-                  </span>
-                  <div className="text-sm text-foreground/85">
-                    {fmtMoney(total)}
-                  </div>
-                  </div>
                 </div>
+              </div>
             </div>
           );
         })}
