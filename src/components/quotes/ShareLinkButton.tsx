@@ -4,7 +4,15 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export function ShareLinkButton({ quoteId }: { quoteId: string }) {
+export function ShareLinkButton({
+  quoteId,
+  size = "default",
+  variant = "secondary",
+}: {
+  quoteId: string;
+  size?: "sm" | "default" | "lg";
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+}) {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
 
@@ -35,7 +43,7 @@ export function ShareLinkButton({ quoteId }: { quoteId: string }) {
   }
 
   return (
-    <Button variant="secondary" onClick={share} disabled={busy}>
+    <Button size={size} variant={variant} onClick={share} disabled={busy}>
       {busy ? "Sharing..." : "Share"}
     </Button>
   );

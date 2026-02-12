@@ -35,7 +35,8 @@ export function DeleteQuoteButton({
       }
 
       if (afterDeleteHref) {
-        router.push(afterDeleteHref);
+        router.replace(afterDeleteHref);
+        return;
       }
 
       router.refresh();

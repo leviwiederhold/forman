@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ShareLinkButton } from "@/components/quotes/ShareLinkButton";
 
 type QuoteRow = {
   id: string;
@@ -77,7 +78,7 @@ export default function QuotesListClient({
     setItems((cur) => cur.filter((q) => q.id !== id));
 
     try {
-      const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/quotes/${id}`, { method: "DELETE", cache: "no-store" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         alert(j?.error ?? "Delete failed.");
@@ -161,7 +162,8 @@ export default function QuotesListClient({
                 </Link>
 
                 {/* RIGHT */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <ShareLinkButton quoteId={row.id} size="sm" variant="ghost" />
                   <Button
                     type="button"
                     variant="ghost"
@@ -180,7 +182,7 @@ export default function QuotesListClient({
                     Delete
                   </Button>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="ml-1 flex flex-col items-end gap-1">
                   <span
                     className={cn(
                       "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]",
