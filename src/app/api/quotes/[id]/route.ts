@@ -177,21 +177,6 @@ export async function DELETE(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: exists, error: fetchErr } = await supabase
-    .from("quotes")
-    .select("id")
-    .eq("id", id)
-    .eq("user_id", auth.user.id)
-    .maybeSingle<{ id: string }>();
-
-  if (fetchErr) {
-    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
-  }
-
-  if (!exists) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
-  }
-
   const { error } = await supabase
     .from("quotes")
     .delete()
