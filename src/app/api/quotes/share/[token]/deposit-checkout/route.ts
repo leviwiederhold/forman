@@ -107,6 +107,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    ui_mode: "hosted",
     line_items: [
       {
         quantity: 1,
@@ -141,6 +142,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     .from("quotes")
     .update({ deposit_checkout_session_id: session.id })
     .eq("id", quote.id);
+
+  if (!session.url) {
+    return NextResponse.json({ error: "Payment link unavailable" }, { status: 500 });
+  }
 
   return NextResponse.json({ url: session.url }, { status: 200 });
 }
