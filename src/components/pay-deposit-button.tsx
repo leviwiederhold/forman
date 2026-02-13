@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 
 export function PayDepositButton({ token }: { token: string }) {
   const [state, setState] = React.useState<null | "loading" | "error">(null);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   async function onClick() {
     setState("loading");
+    setErrorMessage(null);
     try {
       const res = await fetch(`/api/quotes/share/${token}/deposit-checkout`, {
         method: "POST",
@@ -18,6 +20,7 @@ export function PayDepositButton({ token }: { token: string }) {
       const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !json.url) {
         console.error("Deposit checkout failed", res.status, json);
+        setErrorMessage(json.error ?? "Payment link failed. Please contact the contractor.");
         setState("error");
         return;
       }
@@ -25,6 +28,7 @@ export function PayDepositButton({ token }: { token: string }) {
       window.location.href = json.url;
     } catch (e) {
       console.error("Deposit checkout error", e);
+      setErrorMessage("Payment link failed. Please contact the contractor.");
       setState("error");
     }
   }
@@ -37,7 +41,7 @@ export function PayDepositButton({ token }: { token: string }) {
 
       {state === "error" ? (
         <div className="text-xs text-destructive/90">
-          Payment link failed. Please contact the contractor.
+          {errorMessage ?? "Payment link failed. Please contact the contractor."}
         </div>
       ) : null}
     </div>

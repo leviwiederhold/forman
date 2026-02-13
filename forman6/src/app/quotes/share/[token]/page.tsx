@@ -166,7 +166,7 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
         </div>
 
         {/* Deposit payment (optional, roofer-controlled) */}
-        {depositEnabled ? (
+        {depositEnabled && approved ? (
           <div className="mt-6 rounded-xl border p-4 text-sm">
             <div className="flex items-center justify-between">
               <div className="font-medium">Deposit</div>
@@ -194,19 +194,23 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
               </div>
             )}
           </div>
+        ) : depositEnabled && !approved ? (
+          <div className="mt-6 rounded-xl border p-4 text-sm">
+            <div className="font-medium">Deposit</div>
+            <div className="mt-2 text-foreground/70">
+              Deposit payment unlocks after quote approval.
+            </div>
+          </div>
         ) : null}
 
         {/* Approve (client-side: approve → maybe redirect later) */}
         {approved ? null : (
           <div className="mt-6">
-            <ApproveAndMaybePayButton
-              token={token}
-              depositRequired={depositEnabled && !depositPaid}
-            />
+            <ApproveAndMaybePayButton token={token} />
             <div className="mt-2 text-xs text-foreground/60">
               Approval notifies the contractor.
               {depositEnabled && !depositPaid
-                ? " If a deposit is required, you’ll be redirected to pay."
+                ? " You can pay the deposit right after approval."
                 : ""}
             </div>
           </div>

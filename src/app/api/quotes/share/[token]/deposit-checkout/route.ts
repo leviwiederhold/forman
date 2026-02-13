@@ -56,6 +56,11 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     return NextResponse.json({ error: "Quote expired" }, { status: 410 });
   }
 
+  const status = (quote.status ?? "").toLowerCase();
+  if (status !== "accepted") {
+    return NextResponse.json({ error: "Approve quote first" }, { status: 409 });
+  }
+
   // If already paid, don't create another session
   if (quote.deposit_paid_at || (quote.deposit_paid_cents ?? 0) > 0) {
     return NextResponse.json({ error: "Deposit already paid" }, { status: 409 });

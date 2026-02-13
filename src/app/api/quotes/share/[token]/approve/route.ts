@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ token: string }> };
 
-export async function POST(req: Request, ctx: Ctx) {
+export async function POST(_req: Request, ctx: Ctx) {
   try {
     const { token } = await ctx.params;
 
-    const supabase = await createSupabaseServerClient();
+    const admin = createSupabaseAdminClient();
 
-    const { data: quote, error: qErr } = await supabase
+    const { data: quote, error: qErr } = await admin
       .from("quotes")
       .select("id, status, expires_at")
       .eq("share_token", token)
-      .single();
+      .maybeSingle<{ id: string; status: string | null; expires_at: string | null }>();
 
     if (qErr || !quote) {
       return NextResponse.json({ error: "Quote not found" }, { status: 404 });
@@ -26,7 +26,12 @@ export async function POST(req: Request, ctx: Ctx) {
       return NextResponse.json({ error: "Quote expired" }, { status: 410 });
     }
 
-    const { error: uErr } = await supabase
+    const currentStatus = (quote.status ?? "").toLowerCase();
+    if (currentStatus === "accepted") {
+      return NextResponse.json({ ok: true, approved: true }, { status: 200 });
+    }
+
+    const { error: uErr } = await admin
       .from("quotes")
       .update({ status: "accepted" })
       .eq("id", quote.id);
@@ -35,9 +40,13 @@ export async function POST(req: Request, ctx: Ctx) {
       return NextResponse.json({ error: uErr.message }, { status: 500 });
     }
 
-    return NextResponse.redirect(
-      new URL(`/quotes/share/${token}?approved=1`, req.url),
-      { status: 303 }
+    return NextResponse.json(
+      {
+        ok: true,
+        approved: true,
+        redirectTo: `/quotes/share/${token}?approved=1`,
+      },
+      { status: 200 }
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Approve failed";

@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 
 export function ApproveAndMaybePayButton({
   token,
-  depositRequired,
 }: {
   token: string;
-  depositRequired: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -33,30 +31,7 @@ export function ApproveAndMaybePayButton({
               return;
             }
 
-            // 2️⃣ If deposit is required, redirect to Stripe Checkout
-            if (depositRequired) {
-              const depRes = await fetch(
-                `/api/quotes/share/${token}/deposit-checkout`,
-                { method: "POST" }
-              );
-
-              if (!depRes.ok) {
-                const body = await depRes.json().catch(() => ({}));
-                setError(body?.error ?? "Failed to start deposit payment");
-                return;
-              }
-
-              const dep = await depRes.json();
-              if (dep?.url) {
-                window.location.href = dep.url;
-                return;
-              }
-
-              setError("Payment link missing");
-              return;
-            }
-
-            // 3️⃣ No deposit → show approved state
+            // 2️⃣ Approval success → show approved state on share page
             window.location.href = `/quotes/share/${token}?approved=1`;
           });
         }}
