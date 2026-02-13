@@ -291,7 +291,7 @@ const depositEnabled = Boolean(prof?.accept_deposits_on_share) && depositPercent
   const decisions = buildDecisionSignals(rows90);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-8 px-4 py-6 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-medium tracking-tight">Insights</h1>

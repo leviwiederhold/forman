@@ -19,6 +19,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function toSquares(value: number, unit: "squares" | "sqft") {
   return unit === "squares" ? value : value / 100;
@@ -72,6 +79,7 @@ export function NewQuoteClient({
   const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
   const [isSavingDefaults, setIsSavingDefaults] = React.useState(false);
   const [defaultsMsg, setDefaultsMsg] = React.useState<string | null>(null);
+  const [footerAction, setFooterAction] = React.useState<string>("");
 
   const resolver =
     zodResolver(RoofingNewQuoteSchema) as unknown as Resolver<RoofingNewQuote>;
@@ -330,10 +338,21 @@ export function NewQuoteClient({
     }
   }
 
+  function onFooterAction(value: string) {
+    setFooterAction("");
+    if (value === "add-item") {
+      addOneTimeItem();
+      return;
+    }
+    if (value === "save-defaults") {
+      void saveAsDefaults();
+    }
+  }
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-6 xl:grid-cols-12">
       {/* LEFT — FORM */}
-      <div className="space-y-6 rounded-2xl border bg-card p-5">
+      <div className="space-y-6 rounded-2xl border bg-card p-5 xl:col-span-7">
         <div className="text-sm text-foreground/80">Quote details</div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -371,7 +390,7 @@ export function NewQuoteClient({
 
         <div className="text-sm text-foreground/80">Roof details</div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <div className="text-xs text-foreground/60">Roof size</div>
             <Input
@@ -387,10 +406,16 @@ export function NewQuoteClient({
 
           <div className="space-y-1">
             <div className="text-xs text-foreground/60">Unit</div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant={inputs.roof_size_unit === "squares" ? "secondary" : "outline"}
+                variant={inputs.roof_size_unit === "squares" ? "default" : "outline"}
+                className={
+                  inputs.roof_size_unit === "squares"
+                    ? "min-w-0 flex-1"
+                    : "min-w-0 flex-1 bg-background/40 shadow-none"
+                }
+                aria-pressed={inputs.roof_size_unit === "squares"}
                 onClick={() =>
                   form.setValue("inputs.roof_size_unit", "squares", {
                     shouldValidate: true,
@@ -401,7 +426,13 @@ export function NewQuoteClient({
               </Button>
               <Button
                 type="button"
-                variant={inputs.roof_size_unit === "sqft" ? "secondary" : "outline"}
+                variant={inputs.roof_size_unit === "sqft" ? "default" : "outline"}
+                className={
+                  inputs.roof_size_unit === "sqft"
+                    ? "min-w-0 flex-1"
+                    : "min-w-0 flex-1 bg-background/40 shadow-none"
+                }
+                aria-pressed={inputs.roof_size_unit === "sqft"}
                 onClick={() =>
                   form.setValue("inputs.roof_size_unit", "sqft", {
                     shouldValidate: true,
@@ -593,17 +624,18 @@ export function NewQuoteClient({
 
         <Separator />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="secondary" onClick={addOneTimeItem}>
-              Add one-time item
-            </Button>
-            <Button type="button" variant="outline" onClick={saveAsDefaults} disabled={isSavingDefaults}>
-              {isSavingDefaults ? "Saving defaults..." : "Save as defaults"}
-            </Button>
-          </div>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          <Select value={footerAction} onValueChange={onFooterAction} disabled={isSavingDefaults}>
+            <SelectTrigger className="w-full sm:w-[210px]">
+              <SelectValue placeholder={isSavingDefaults ? "Saving defaults..." : "More actions"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="add-item">Add one-time item</SelectItem>
+              <SelectItem value="save-defaults">Save as defaults</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <Button type="button" onClick={saveQuote} disabled={isSaving}>
+          <Button type="button" className="w-full sm:ml-auto sm:w-auto" onClick={saveQuote} disabled={isSaving}>
             {isSaving ? "Saving..." : editId ? "Save Changes" : "Save Quote"}
           </Button>
         </div>
@@ -718,7 +750,7 @@ export function NewQuoteClient({
       </div>
 
       {/* RIGHT — PREVIEW */}
-      <div className="space-y-4 rounded-2xl border bg-card p-5">
+      <div className="space-y-4 rounded-2xl border bg-card p-5 xl:col-span-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-sm text-foreground/80">Estimate preview</div>

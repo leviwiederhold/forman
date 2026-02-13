@@ -18,6 +18,9 @@ const NAV = [
 ];
 
 function isActive(pathname: string, href: string) {
+  if (href === "/quotes" && (pathname === "/quotes/new" || pathname.startsWith("/quotes/new/"))) {
+    return false;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -34,10 +37,10 @@ function NavLink({
     <Link
       href={href}
       className={[
-        "rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
+        "rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
         active
           ? "border border-primary/35 bg-primary/15 text-foreground"
-          : "text-foreground/70 hover:bg-white/8 hover:text-foreground",
+          : "text-foreground/70 hover:-translate-y-0.5 hover:bg-white/8 hover:text-foreground",
       ].join(" ")}
     >
       {label}
@@ -47,6 +50,7 @@ function NavLink({
 
 export default function AppHeader() {
   const pathname = usePathname();
+  const newQuoteActive = pathname === "/quotes/new" || pathname.startsWith("/quotes/new/");
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-background/65 backdrop-blur-xl">
@@ -61,7 +65,12 @@ export default function AppHeader() {
 
         {/* CENTER (desktop) */}
         <nav className="mx-auto hidden items-center gap-2 md:flex">
-          <NewQuoteButton appearance="nav" />
+          <NewQuoteButton
+            appearance="nav"
+            className={
+              newQuoteActive ? "border border-primary/35 bg-primary/15 text-foreground" : ""
+            }
+          />
           {NAV.map((item) => (
             <NavLink
               key={item.href}

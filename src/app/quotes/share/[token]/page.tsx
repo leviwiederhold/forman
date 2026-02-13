@@ -31,6 +31,23 @@ type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 function money(n: number | null | undefined) {
   const val = typeof n === "number" && Number.isFinite(n) ? n : 0;
   return `$${val.toFixed(2)}`;
@@ -52,6 +69,12 @@ function formatDate(iso: string | null) {
   });
 }
 
+function isMissingTrackQuoteViewRpc(err: { code?: string; message?: string } | null) {
+  if (!err) return false;
+  if (err.code === "PGRST202") return true;
+  return (err.message ?? "").includes("track_quote_view");
+}
+
 export default async function QuoteSharePage({ params, searchParams }: PageProps) {
   const { token } = await params;
   const sp = (await searchParams) ?? {};
@@ -61,15 +84,34 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
 
   const supabase = await createSupabaseServerClient();
 
-  const { data: quote, error } = await supabase
+  const { data: quoteRow, error } = await supabase
     .from("quotes")
-    .select(
-      "id, user_id, trade, customer_name, customer_address, status, subtotal, tax, total, created_at, expires_at, share_token, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
-    )
+    .select("*")
     .eq("share_token", token)
-    .single<QuoteShareView>();
+    .single<Record<string, unknown>>();
 
-  if (error || !quote) redirect("/");
+  if (error || !quoteRow) redirect("/");
+
+  const row = asRecord(quoteRow);
+  if (!row) redirect("/");
+
+  const quote: QuoteShareView = {
+    user_id: asString(row.user_id) ?? "",
+    id: asString(row.id) ?? "",
+    trade: asString(row.trade) ?? "",
+    customer_name: asString(row.customer_name),
+    customer_address: asString(row.customer_address),
+    status: asString(row.status),
+    subtotal: asNumber(row.subtotal),
+    tax: asNumber(row.tax),
+    total: asNumber(row.total),
+    created_at: asString(row.created_at),
+    expires_at: asString(row.expires_at),
+    share_token: asString(row.share_token),
+    low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
+    deposit_paid_at: asString(row.deposit_paid_at),
+    deposit_paid_cents: asNumber(row.deposit_paid_cents),
+  };
 
   // Record client view (idempotent row via upsert in DB function).
   // We intentionally keep this non-blocking for page rendering.
@@ -77,8 +119,8 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
     p_quote_id: quote.id,
     p_token: token,
   });
-  if (viewTrackError) {
-    console.error("quote view tracking failed:", viewTrackError.message);
+  if (viewTrackError && !isMissingTrackQuoteViewRpc(viewTrackError)) {
+    console.warn("quote view tracking unavailable:", viewTrackError.message);
   }
 
   // IMPORTANT: share page is public → RLS blocks profiles/stripe_connect_accounts via anon client

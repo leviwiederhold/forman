@@ -28,7 +28,7 @@ export default async function QuoteEditPage({ params }: PageProps) {
   } catch (err) {
     // Fail loudly, but don’t crash the whole app
     return (
-      <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <Link href={`/quotes/${id}`}>
             <Button variant="outline">← Back</Button>
@@ -86,7 +86,7 @@ export default async function QuoteEditPage({ params }: PageProps) {
     .order("created_at", { ascending: true });
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <Link href={`/quotes/${id}`}>
           <Button variant="outline">← Back</Button>

@@ -19,6 +19,9 @@ const NAV = [
 ];
 
 function isActive(pathname: string, href: string) {
+  if (href === "/quotes" && (pathname === "/quotes/new" || pathname.startsWith("/quotes/new/"))) {
+    return false;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -26,6 +29,7 @@ export function MobileMenu() {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
+  const newQuoteActive = pathname === "/quotes/new" || pathname.startsWith("/quotes/new/");
 
   React.useEffect(() => setMounted(true), []);
 
@@ -79,7 +83,12 @@ export function MobileMenu() {
             {/* New Quote styled like the other items */}
             <NewQuoteButton
               appearance="nav"
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-foreground/70 transition hover:bg-white/8 hover:text-foreground"
+              className={[
+                "block w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition",
+                newQuoteActive
+                  ? "border border-primary/35 bg-primary/15 text-foreground"
+                  : "text-foreground/70 hover:bg-white/8 hover:text-foreground",
+              ].join(" ")}
             />
 
             {NAV.map((item) => {
@@ -89,7 +98,7 @@ export function MobileMenu() {
                   key={item.href}
                   href={item.href}
                   className={[
-                    "block rounded-xl px-3 py-2 text-sm font-medium transition",
+                    "block rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
                     active
                       ? "border border-primary/35 bg-primary/15 text-foreground"
                       : "text-foreground/70 hover:bg-white/8 hover:text-foreground",

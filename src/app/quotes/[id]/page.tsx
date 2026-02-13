@@ -52,6 +52,23 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 function asArray(v: JsonValue | null): unknown[] {
   return Array.isArray(v) ? v : [];
 }
@@ -117,16 +134,33 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   // ✅ Email verification required (launch hardening)
   if (!auth.user.email_confirmed_at) redirect("/verify-email");
 
-  const { data: quote, error } = await supabase
+  const { data: quoteRow, error } = await supabase
     .from("quotes")
-    .select(
-      "id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, expires_at, share_token, low_margin_acknowledged_at"
-    )
+    .select("*")
     .eq("id", id)
     .eq("user_id", auth.user.id)
-    .single<QuoteView>();
+    .single<Record<string, unknown>>();
 
-  if (error || !quote) redirect("/quotes");
+  if (error || !quoteRow) redirect("/quotes");
+
+  const row = asRecord(quoteRow);
+  if (!row) redirect("/quotes");
+
+  const quote: QuoteView = {
+    id: asString(row.id) ?? id,
+    trade: asString(row.trade) ?? "",
+    customer_name: asString(row.customer_name),
+    customer_address: asString(row.customer_address),
+    status: asString(row.status),
+    subtotal: asNumber(row.subtotal),
+    tax: asNumber(row.tax),
+    total: asNumber(row.total),
+    line_items_json: (row.line_items_json as JsonValue | null) ?? null,
+    created_at: asString(row.created_at),
+    expires_at: asString(row.expires_at),
+    share_token: asString(row.share_token),
+    low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
+  };
 
   const items = asArray(quote.line_items_json);
   const SAMPLE_SIZE = 20;
@@ -236,7 +270,7 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   const expiresAtLabel = fmtDate(quote.expires_at);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <Button asChild variant="outline">
           <Link href="/quotes">← Back</Link>
