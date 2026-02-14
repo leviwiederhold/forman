@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 
-export function PayDepositButton({ token }: { token: string }) {
+export function PayDepositButton({ token, quoteId }: { token: string; quoteId?: string }) {
   const [state, setState] = React.useState<null | "loading" | "error">(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
@@ -11,24 +11,36 @@ export function PayDepositButton({ token }: { token: string }) {
     setState("loading");
     setErrorMessage(null);
     try {
-      const res = await fetch(`/api/quotes/share/${token}/deposit-checkout`, {
+      const quoteIdParam = quoteId ? `?quoteId=${encodeURIComponent(quoteId)}` : "";
+      const res = await fetch(`/api/quotes/share/${token}/deposit-checkout${quoteIdParam}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(quoteId ? { quoteId } : {}),
       });
 
-      const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      const raw = await res.text();
+      let json: { url?: string; error?: string } = {};
+      try {
+        json = raw ? (JSON.parse(raw) as { url?: string; error?: string }) : {};
+      } catch {
+        json = {};
+      }
       if (!res.ok || !json.url) {
-        console.error("Deposit checkout failed", res.status, json);
-        setErrorMessage(json.error ?? "Payment link failed. Please contact the contractor.");
+        console.warn("Deposit checkout failed", res.status, json, raw);
+        const details =
+          json.error ??
+          (raw.startsWith("<!DOCTYPE") || raw.startsWith("<html")
+            ? `HTTP ${res.status} ${res.statusText}`
+            : raw || `HTTP ${res.status} ${res.statusText}`);
+        setErrorMessage(details);
         setState("error");
         return;
       }
 
       window.location.href = json.url;
     } catch (e) {
-      console.error("Deposit checkout error", e);
-      setErrorMessage("Payment link failed. Please contact the contractor.");
+      console.warn("Deposit checkout error", e);
+      setErrorMessage("Network error starting payment. Please try again.");
       setState("error");
     }
   }

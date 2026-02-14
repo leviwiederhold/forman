@@ -297,19 +297,12 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
               </div>
             ) : (
               <div className="mt-3">
-                <PayDepositButton token={token} />
+                <PayDepositButton token={token} quoteId={quote.id} />
                 <div className="mt-2 text-xs text-foreground/60">
                   Secure payment powered by Stripe.
                 </div>
               </div>
             )}
-          </div>
-        ) : depositEnabled && !approved ? (
-          <div className="mt-6 rounded-xl border p-4 text-sm">
-            <div className="font-medium">Deposit</div>
-            <div className="mt-2 text-foreground/70">
-              Deposit payment unlocks after quote approval.
-            </div>
           </div>
         ) : null}
 
@@ -322,6 +315,7 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
           <div className="mt-6">
             <ApproveAndMaybePayButton
               token={token}
+              quoteId={quote.id}
             />
             <div className="mt-2 text-xs text-foreground/60">
               Approval notifies the contractor.

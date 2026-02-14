@@ -4,7 +4,55 @@ export const dynamic = "force-dynamic";
 import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
+
+type DepositBody = { quoteId?: string };
+type QuoteLookupRow = {
+  id: string;
+  user_id: string;
+  subtotal: number | null;
+  total: number | null;
+  status: string | null;
+  expires_at: string | null;
+  share_token: string | null;
+  low_margin_acknowledged_at: string | null;
+  deposit_paid_at: string | null;
+  deposit_paid_cents: number | null;
+};
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function toQuoteLookupRow(row: Record<string, unknown> | null): QuoteLookupRow | null {
+  if (!row) return null;
+  const id = asString(row.id);
+  const userId = asString(row.user_id);
+  if (!id || !userId) return null;
+
+  return {
+    id,
+    user_id: userId,
+    subtotal: asNumber(row.subtotal),
+    total: asNumber(row.total),
+    status: asString(row.status),
+    expires_at: asString(row.expires_at),
+    share_token: asString(row.share_token),
+    low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
+    deposit_paid_at: asString(row.deposit_paid_at),
+    deposit_paid_cents: asNumber(row.deposit_paid_cents),
+  };
+}
 
 function getOrigin(req: NextRequest) {
   const proto = req.headers.get("x-forwarded-proto") ?? "http";
@@ -23,34 +71,78 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   const origin = getOrigin(req);
 
   const { token } = await ctx.params;
+  const normalizedToken = token.trim();
+  const quoteIdFromQuery = req.nextUrl.searchParams.get("quoteId");
+  const body = (await req.json().catch(() => ({}))) as DepositBody;
+  const bodyQuoteId =
+    typeof body.quoteId === "string" && body.quoteId.trim().length > 0
+      ? body.quoteId.trim()
+      : typeof quoteIdFromQuery === "string" && quoteIdFromQuery.trim().length > 0
+      ? quoteIdFromQuery.trim()
+      : null;
 
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (!stripeKey) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+  const supabase = await createSupabaseServerClient();
 
-  const admin = createSupabaseAdminClient();
-
-  // 1) Resolve quote by share token
-  const { data: quote, error: qErr } = await admin
-    .from("quotes")
-    .select(
-      "id, user_id, subtotal, total, status, expires_at, low_margin_acknowledged_at, deposit_paid_at, deposit_paid_cents"
-    )
-    .eq("share_token", token)
-    .maybeSingle<{
-      id: string;
-      user_id: string;
-      subtotal: number | null;
-      total: number | null;
-      status: string | null;
-      expires_at: string | null;
-      low_margin_acknowledged_at: string | null;
-      deposit_paid_at: string | null;
-      deposit_paid_cents: number | null;
-    }>();
-
-  if (qErr || !quote) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  let admin: ReturnType<typeof createSupabaseAdminClient> | null = null;
+  let adminInitError: string | null = null;
+  try {
+    admin = createSupabaseAdminClient();
+  } catch (e) {
+    adminInitError = e instanceof Error ? e.message : "admin unavailable";
+    admin = null;
   }
+
+  if (!admin) {
+    return NextResponse.json({ error: "Payments service unavailable", adminInitError }, { status: 500 });
+  }
+
+  let quote: QuoteLookupRow | null = null;
+
+  if (bodyQuoteId) {
+    const { data: byId } = await admin
+      .from("quotes")
+      .select("*")
+      .eq("id", bodyQuoteId)
+      .maybeSingle<Record<string, unknown>>();
+    quote = toQuoteLookupRow(byId ?? null);
+  }
+
+  if (!quote && bodyQuoteId) {
+    const { data: byId } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("id", bodyQuoteId)
+      .maybeSingle<Record<string, unknown>>();
+    quote = toQuoteLookupRow(byId ?? null);
+  }
+
+  if (!quote) {
+    const { data: byTokenRows } = await admin
+      .from("quotes")
+      .select("*")
+      .eq("share_token", normalizedToken)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    quote = toQuoteLookupRow((byTokenRows?.[0] as Record<string, unknown> | undefined) ?? null);
+  }
+
+  if (!quote) {
+    const { data: byTokenRows } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("share_token", normalizedToken)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    quote = toQuoteLookupRow((byTokenRows?.[0] as Record<string, unknown> | undefined) ?? null);
+  }
+
+  if (!quote) {
+    return NextResponse.json({ error: "Quote not found", token: normalizedToken, quoteId: bodyQuoteId }, { status: 404 });
+  }
+
+  const effectiveShareToken = (quote.share_token ?? "").trim() || normalizedToken;
 
   if (getQuoteExpirationStatus(quote.expires_at).isExpired) {
     return NextResponse.json({ error: "Quote expired" }, { status: 410 });
@@ -112,6 +204,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    ui_mode: "hosted",
     line_items: [
       {
         quantity: 1,
@@ -122,24 +215,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
         },
       },
     ],
-    success_url: `${origin}/quotes/share/${token}?deposit=success`,
-    cancel_url: `${origin}/quotes/share/${token}?deposit=cancel`,
+    success_url: `${origin}/quotes/share/${effectiveShareToken}?deposit=success`,
+    cancel_url: `${origin}/quotes/share/${effectiveShareToken}?deposit=cancel`,
     payment_intent_data: {
       transfer_data: { destination: acct.stripe_account_id },
       metadata: {
         quote_id: quote.id,
-        share_token: token,
+        share_token: effectiveShareToken,
         roofer_user_id: quote.user_id,
         kind: "deposit",
       },
     },
     metadata: {
       quote_id: quote.id,
-      share_token: token,
+      share_token: effectiveShareToken,
       roofer_user_id: quote.user_id,
       kind: "deposit",
     },
   });
+
+  if (!session.url) {
+    return NextResponse.json({ error: "Payment link unavailable" }, { status: 500 });
+  }
 
   // Store session id for debugging (optional; don't fail if update fails)
   await admin

@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatExpiresIn, getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 import { FollowUpTemplates } from "@/components/quotes/FollowUpTemplates";
 import { QuoteActions } from "./quote-actions";
-import { DeleteQuoteButton } from "@/components/delete-quote-button";
 
 export const dynamic = "force-dynamic";
 
@@ -348,13 +347,6 @@ export default async function QuoteDetailPage({ params }: PageProps) {
             />
           </div>
 
-          <div className="mt-3 flex justify-end">
-            <DeleteQuoteButton
-              quoteId={quote.id}
-              afterDeleteHref="/quotes"
-              variant="destructive"
-            />
-          </div>
         </div>
       </div>
 

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 
 export function ApproveAndMaybePayButton({
   token,
+  quoteId,
 }: {
   token: string;
+  quoteId?: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +25,8 @@ export function ApproveAndMaybePayButton({
             // 1️⃣ Approve the quote
             const approveRes = await fetch(`/api/quotes/share/${token}/approve`, {
               method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(quoteId ? { quoteId } : {}),
             });
 
             if (!approveRes.ok) {
