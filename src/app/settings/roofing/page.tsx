@@ -23,8 +23,8 @@ export default async function RoofingSettingsPage() {
   const initialRates = (data?.rates_json ?? ROOFING_RATE_DEFAULTS) as typeof ROOFING_RATE_DEFAULTS;
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-4xl space-y-8">
+    <main className="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-[1400px] space-y-8">
         {/* Page header */}
         <header className="space-y-2">
           <h1 className="text-lg font-light tracking-wide">Pricing</h1>

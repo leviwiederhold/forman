@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { RoofingNewQuoteSchema } from "@/trades/roofing/schema";
 import { calculateRoofingQuote } from "@/trades/roofing/pricing";
 import type { SavedCustomItem } from "@/trades/roofing/pricing";
@@ -177,15 +178,32 @@ export async function DELETE(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { error } = await supabase
+  const { data: ownedQuote, error: ownershipErr } = await supabase
+    .from("quotes")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", auth.user.id)
+    .single<{ id: string }>();
+
+  if (ownershipErr || !ownedQuote) {
+    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: deletedRows, error: deleteErr } = await admin
     .from("quotes")
     .delete()
     .eq("id", id)
-    .eq("user_id", auth.user.id);
+    .eq("user_id", auth.user.id)
+    .select("id");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (deleteErr) {
+    return NextResponse.json({ error: deleteErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  if (!deletedRows || deletedRows.length === 0) {
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
 }

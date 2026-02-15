@@ -130,7 +130,7 @@ export default async function NewQuotePage() {
   // ✅ Instead of redirecting to /billing, SHOW A FRIENDLY MESSAGE
   if (!ent.canCreateQuotes) {
     return (
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
+      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <Link href="/dashboard">
             <Button variant="outline">← Back</Button>
@@ -172,7 +172,7 @@ export default async function NewQuotePage() {
     rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
   } catch (err) {
     return (
-      <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <Link href="/quotes">
             <Button variant="outline">← Back</Button>
@@ -267,7 +267,7 @@ export default async function NewQuotePage() {
   const historicalSamples = (historicalRows ?? []) as HistoricalQuoteSample[];
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <Link href="/quotes">
           <Button variant="outline">← Back</Button>

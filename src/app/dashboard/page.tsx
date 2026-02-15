@@ -197,7 +197,7 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
   const weeklyReminder = buildWeeklyReminder(rows30);
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-8 px-4 py-6 sm:p-6">
       <div className="space-y-1">
         <h1 className="text-xl font-medium tracking-tight">{headline}</h1>
         <div className="text-sm text-foreground/65">{subhead}</div>

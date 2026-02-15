@@ -39,6 +39,8 @@ export function DeleteQuoteButton({
       } else {
         router.refresh();
       }
+    } catch {
+      alert("Delete failed.");
     } finally {
       setLoading(false);
     }

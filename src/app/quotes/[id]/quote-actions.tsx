@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Pencil, Send } from "lucide-react";
 
 type Props = {
   id: string;
@@ -40,7 +41,6 @@ export function QuoteActions({
   monthlyTargetWarning,
 }: Props) {
   const router = useRouter();
-  const [copied, setCopied] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [guardBusy, setGuardBusy] = React.useState(false);
   const [ackAt, setAckAt] = React.useState<string | null>(acknowledgedAt);
@@ -51,6 +51,32 @@ export function QuoteActions({
   const marginPct = calcMarginPct(subtotal, total);
   const isLowMargin = marginPct < TARGET_MARGIN;
   const isAcknowledged = Boolean(ackAt);
+
+  async function ensureShareUrl() {
+    if (shareToken) {
+      return new URL(`/quotes/share/${shareToken}`, window.location.origin).toString();
+    }
+
+    const res = await fetch(`/api/quotes/${id}/share`, { method: "POST" });
+    const json = (await res.json().catch(() => ({}))) as {
+      url?: string;
+      token?: string;
+      error?: string;
+    };
+    if (!res.ok) {
+      throw new Error(json.error ?? "Could not create share link.");
+    }
+
+    const path = json.url ?? (json.token ? `/quotes/share/${json.token}` : "");
+    if (!path) throw new Error("Share link missing.");
+
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+
+    const normalized = path.startsWith("/") ? path : `/quotes/share/${path}`;
+    return new URL(normalized, window.location.origin).toString();
+  }
 
   async function acknowledgeLowMargin(): Promise<boolean> {
     const res = await fetch(`/api/quotes/${id}/acknowledge-low-margin`, {
@@ -78,42 +104,40 @@ export function QuoteActions({
     return await acknowledgeLowMargin();
   }
 
-  async function onCopyLink() {
-    if (!shareToken) {
-      alert("Missing share token for this quote.");
-      return;
-    }
-
+  async function onShare() {
     setGuardError(null);
     const ok = await requireGuardrail();
     setGuardBusy(false);
     if (!ok) return;
 
-    const url = new URL(
-      `/quotes/share/${shareToken}`,
-      window.location.origin
-    ).toString();
-
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      const url = await ensureShareUrl();
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({
+          url,
+        });
+        return;
+      }
+      const parsed = new URL(url);
+      router.push(`${parsed.pathname}${parsed.search}`);
+      router.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create share link.");
+    }
   }
 
   async function onEmail() {
-    if (!shareToken) {
-      alert("Missing share token for this quote.");
-      return;
-    }
-
     setGuardError(null);
     const ok = await requireGuardrail();
     setGuardBusy(false);
     if (!ok) return;
-
-    const url = new URL(
-      `/quotes/share/${shareToken}`,
-      window.location.origin
-    ).toString();
+    let url = "";
+    try {
+      url = await ensureShareUrl();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not create share link.");
+      return;
+    }
 
     const subject = "Here is your quote";
     const body =
@@ -144,6 +168,25 @@ export function QuoteActions({
     }
 
     router.push(`/quotes/${json.id}/edit`);
+  }
+
+  async function onDelete() {
+    if (busy) return;
+    const ok = window.confirm("Delete this quote? This cannot be undone.");
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        alert(body.error ?? "Delete failed.");
+        return;
+      }
+      router.push("/quotes");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const marginTextClass = !isLowMargin
@@ -197,30 +240,56 @@ export function QuoteActions({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button asChild variant="outline">
-          <Link href={`/quotes/${id}/edit`}>Edit</Link>
-        </Button>
+      <div className="rounded-xl border bg-background/40 p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" className="h-9 border-foreground/20 bg-transparent px-3">
+            <Link href={`/quotes/${id}/edit`} className="inline-flex items-center gap-2">
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </Link>
+          </Button>
 
-        <Button variant="outline" onClick={onDuplicate} disabled={busy}>
-          {busy ? "Duplicating..." : "Duplicate"}
-        </Button>
+          <Button className="h-9 px-4" onClick={onShare} disabled={blockSend || sendBusy}>
+            <Send className="mr-2 h-3.5 w-3.5" />
+            {sendBusy ? "Sending..." : "Share quote"}
+          </Button>
 
-        <Button asChild variant="outline">
-          <Link href={`/api/quotes/${id}/pdf`}>Download PDF</Link>
-        </Button>
+          <div className={`ml-auto rounded-full border px-2.5 py-1 text-xs ${marginTextClass}`}>
+            Margin {marginPct.toFixed(1)}%
+            {isLowMargin && isAcknowledged ? " acknowledged" : ""}
+          </div>
+        </div>
 
-        <Button variant="outline" onClick={onCopyLink} disabled={blockSend || sendBusy}>
-          {copied ? "Copied!" : sendBusy ? "Sending..." : "Copy Link"}
-        </Button>
-
-        <Button variant="outline" onClick={onEmail} disabled={blockSend || sendBusy}>
-          {sendBusy ? "Sending..." : "Email"}
-        </Button>
-
-        <div className={`ml-2 text-xs ${marginTextClass}`}>
-          Margin: {marginPct.toFixed(1)}%
-          {isLowMargin && isAcknowledged ? " (acknowledged)" : ""}
+        <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-foreground/70">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-foreground/75 hover:text-foreground"
+            onClick={onEmail}
+            disabled={busy || sendBusy}
+          >
+            Email
+          </Button>
+          <span className="text-foreground/35">•</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-foreground/75 hover:text-foreground"
+            onClick={onDuplicate}
+            disabled={busy || sendBusy}
+          >
+            Duplicate
+          </Button>
+          <span className="text-foreground/35">•</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-destructive/85 hover:text-destructive"
+            onClick={onDelete}
+            disabled={busy || sendBusy}
+          >
+            Delete
+          </Button>
         </div>
       </div>
     </div>

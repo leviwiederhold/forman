@@ -21,7 +21,7 @@ export default async function QuotesPage() {
     .limit(200);
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
+    <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-sm text-foreground/70">Quotes</div>

@@ -34,13 +34,20 @@ export async function POST(
   if (!token) {
     token = randomToken();
 
-    const { error: upErr } = await supabase
+    const { data: updated, error: upErr } = await supabase
       .from("quotes")
       .update({ share_token: token })
       .eq("id", id)
-      .eq("user_id", auth.user.id);
+      .eq("user_id", auth.user.id)
+      .select("share_token")
+      .single<{ share_token: string | null }>();
 
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    if (!updated?.share_token) {
+      return NextResponse.json({ error: "share_token_not_created" }, { status: 500 });
+    }
+
+    token = updated.share_token;
   }
 
   return NextResponse.json({
