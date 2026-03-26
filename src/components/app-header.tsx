@@ -54,7 +54,10 @@ function NavLink({
 
 export default function AppHeader() {
   const pathname = usePathname();
-  const hidden = ["/login", "/signup", "/verify-email"].some((prefix) => pathname.startsWith(prefix)) || pathname.startsWith("/quotes/share/");
+  const hidden =
+    ["/", "/pricing", "/demo", "/privacy", "/terms", "/login", "/signup", "/verify-email"].some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    ) || pathname.startsWith("/quotes/share/");
   if (hidden) return null;
   const newQuoteActive = pathname === "/quotes/new" || pathname.startsWith("/quotes/new/");
 

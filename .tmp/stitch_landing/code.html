@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FORMAN | Rugged Software for Rugged Trades</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline-variant": "#dfbfbc",
+              "surface-variant": "#e4e2df",
+              "surface-container-lowest": "#ffffff",
+              "on-primary": "#ffffff",
+              "primary-fixed": "#ffdad6",
+              "surface-container-high": "#eae8e5",
+              "primary": "#6a020a",
+              "surface-container": "#efeeeb",
+              "on-secondary-fixed-variant": "#474746",
+              "on-tertiary-container": "#86bedf",
+              "on-secondary-fixed": "#1b1c1c",
+              "secondary-fixed-dim": "#c8c6c5",
+              "primary-container": "#8b1e1e",
+              "tertiary-fixed": "#c3e8ff",
+              "on-background": "#1b1c1a",
+              "tertiary-container": "#004e6a",
+              "on-tertiary-fixed": "#001e2c",
+              "inverse-surface": "#30312f",
+              "inverse-primary": "#ffb3ad",
+              "inverse-on-surface": "#f2f0ed",
+              "tertiary": "#00364b",
+              "surface-tint": "#aa3531",
+              "secondary-container": "#e4e2e1",
+              "secondary": "#5f5e5e",
+              "on-primary-container": "#ff9d95",
+              "on-primary-fixed-variant": "#891c1d",
+              "surface-container-highest": "#e4e2df",
+              "surface": "#fbf9f6",
+              "primary-fixed-dim": "#ffb3ad",
+              "on-surface-variant": "#58413f",
+              "on-tertiary-fixed-variant": "#004c68",
+              "on-tertiary": "#ffffff",
+              "on-secondary-container": "#656464",
+              "outline": "#8b716e",
+              "on-primary-fixed": "#410003",
+              "error-container": "#ffdad6",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#95ceef",
+              "surface-bright": "#fbf9f6",
+              "on-surface": "#1b1c1a",
+              "surface-container-low": "#f5f3f0",
+              "secondary-fixed": "#e4e2e1",
+              "on-error-container": "#93000a",
+              "surface-dim": "#dbdad7",
+              "on-secondary": "#ffffff",
+              "on-error": "#ffffff",
+              "background": "#fbf9f6"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Public Sans"],
+              "label": ["Public Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Public Sans', sans-serif; background-color: #fbf9f6; color: #1b1c1a; }
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4 max-w-full bg-[#fbf9f6] dark:bg-[#1b1c1a] border-b-2 border-[#dfbfbc] dark:border-[#413332] flat no shadows">
+<div class="text-2xl font-black tracking-tighter text-[#1b1c1a] dark:text-[#fbf9f6]">FORMAN</div>
+<div class="hidden md:flex items-center gap-8 font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold">
+<a class="text-[#6a020a] dark:text-[#ffb4ab] border-b-2 border-[#6a020a] transition-colors translate-y-0.5 transition-all" href="#">How It Works</a>
+<a class="text-[#5f5e5e] dark:text-[#938f8f] hover:bg-[#efeeeb] dark:hover:bg-[#2B2B2B] transition-colors" href="#">Pricing</a>
+<a class="text-[#5f5e5e] dark:text-[#938f8f] hover:bg-[#efeeeb] dark:hover:bg-[#2B2B2B] transition-colors" href="#">Reviews</a>
+<a class="text-[#5f5e5e] dark:text-[#938f8f] hover:bg-[#efeeeb] dark:hover:bg-[#2B2B2B] transition-colors" href="#">FAQ</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:block font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-secondary px-4 py-2 hover:bg-surface-container transition-colors">Login</button>
+<button class="bg-primary text-on-primary font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold px-6 py-3 rounded-none active:translate-y-0.5 transition-all">Start Free Trial</button>
+</div>
+</nav>
+<!-- Hero Section -->
+<header class="relative bg-surface pt-16 pb-24 px-6 overflow-hidden">
+<div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+<div>
+<span class="inline-block bg-tertiary-container text-on-tertiary-container px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">Built for roofing contractors</span>
+<h1 class="text-5xl md:text-7xl font-bold tracking-tighter text-on-surface leading-[0.9] mb-8">
+                    Quotes faster.<br/>Prices tighter.<br/><span class="text-primary">More jobs won.</span>
+</h1>
+<p class="text-xl text-secondary max-w-xl mb-10 leading-relaxed">
+                    Forman helps roofers create fast professional quotes, protect margins, collect deposits, and stay organized without bloated software.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-primary text-on-primary font-headline uppercase tracking-widest font-bold px-10 py-5 text-lg hover:ring-2 hover:ring-inset hover:ring-on-primary transition-all">Start Free Trial</button>
+<button class="bg-secondary text-on-secondary font-headline uppercase tracking-widest font-bold px-10 py-5 text-lg transition-all">Book Demo</button>
+</div>
+</div>
+<div class="relative">
+<div class="border-4 border-on-surface bg-surface-container-high p-2">
+<img alt="Forman Dashboard" class="w-full h-auto grayscale-0 contrast-110" data-alt="high-fidelity dashboard interface for a construction project management tool showing material lists and cost estimates in a clean technical layout" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRMMER5YZ3VXuQ1gHJXoQluAsjFJYalefD-LoQSytIdnzFTvH78Jh4YTzhfqLSiEsDXqqKQ8rWb26lekE2Ee8V4bIJ9MzLB8T2dNTNFcf6hcOj6RLFX4bnc8dI6ewczltMd7pRQibyzErUjUuAHx1Mqn-iU50Oo3dysdpzddXPRyHZzB4UeQZ0yWU0JCliiKMQ5xXA5NmstpnlUKWsV0PUxLA_mzYLn32voYzsTqLJiRkOX4O-5NnPDVu2d3kKd7BksxppcTNICsw"/>
+</div>
+<!-- Decorative element -->
+<div class="absolute -bottom-6 -right-6 w-32 h-32 border-r-8 border-b-8 border-outline-variant hidden md:block"></div>
+</div>
+</div>
+</header>
+<!-- Trust Bar -->
+<section class="bg-surface-container border-y-2 border-outline-variant py-8 overflow-hidden">
+<div class="max-w-7xl mx-auto px-6">
+<div class="flex flex-wrap justify-center md:justify-between items-center gap-8">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-weight="fill">roofing</span>
+<span class="font-headline font-bold text-sm uppercase tracking-widest">Built for roofers</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-weight="fill">timer</span>
+<span class="font-headline font-bold text-sm uppercase tracking-widest">Fast estimate creation</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-weight="fill">payments</span>
+<span class="font-headline font-bold text-sm uppercase tracking-widest">Protect your margins</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-weight="fill">receipt_long</span>
+<span class="font-headline font-bold text-sm uppercase tracking-widest">Professional quotes</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Problem/Solution Section -->
+<section class="py-24 px-6 bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="grid md:grid-cols-2 gap-0 border-4 border-on-surface">
+<!-- Pain Points -->
+<div class="p-12 md:border-r-4 border-on-surface bg-surface-variant">
+<h3 class="text-3xl font-bold uppercase tracking-tighter mb-8 flex items-center gap-4">
+<span class="material-symbols-outlined text-4xl text-secondary">warning</span>
+                        The Old Way
+                    </h3>
+<ul class="space-y-6">
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-error" data-weight="fill">close</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Slow quote process</p>
+<p class="text-secondary mt-1">Waiting until you're back in the office to type up a messy spreadsheet.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-error" data-weight="fill">close</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Underbidding jobs</p>
+<p class="text-secondary mt-1">Missing material price hikes and losing profit on every square.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-error" data-weight="fill">close</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Messy paperwork</p>
+<p class="text-secondary mt-1">Lost lead notes, text-message approvals, and chasing checks.</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Solution -->
+<div class="p-12 bg-surface">
+<h3 class="text-3xl font-bold uppercase tracking-tighter mb-8 flex items-center gap-4">
+<span class="material-symbols-outlined text-4xl text-primary">verified</span>
+                        The Forman Way
+                    </h3>
+<ul class="space-y-6">
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary" data-weight="fill">check_circle</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Fast quote builder</p>
+<p class="text-secondary mt-1">Generate professional PDFs on-site in under 3 minutes.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary" data-weight="fill">check_circle</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Pricing control</p>
+<p class="text-secondary mt-1">Locked-in margins with real-time material cost tracking.</p>
+</div>
+</li>
+<li class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary" data-weight="fill">check_circle</span>
+<div>
+<p class="font-headline font-bold uppercase text-sm tracking-widest">Organized customer flow</p>
+<p class="text-secondary mt-1">Digital signatures and automatic deposit collection.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Feature Sections -->
+<section class="py-24 px-6 bg-surface-container-low">
+<div class="max-w-7xl mx-auto space-y-32">
+<!-- Feature 1 -->
+<div class="grid md:grid-cols-2 gap-16 items-center">
+<div class="order-2 md:order-1">
+<div class="border-2 border-outline p-2 bg-surface">
+<img alt="Quote Creation UI" class="w-full" data-alt="a mobile-first UI snippet showing a roofing estimate builder with itemized shingle types and square footage inputs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADG22IkBckuPZ58ZYcCFhJO-8afDXH5XAF3_RXDF57UsT2HHXaPv0x9RHhzfuFbo8TDyKJmQCPOFUvP4owcjng0zJh7fTJ8kakIN75dfpxlFnXrvAI3J6aohZVFRs2M98Zpbpa9grxR93DVZRP_NsigoVlJCqhyEqgz5aO-Ou7YY2CrfjnccAKv2kI8koXC2wkZSTNX49CmKNgi-I6gNvlk5SpFITesjjjo80qSvZoIzQ_stqk1nJ34PhON6nKVcqM3xYImciKf9k"/>
+</div>
+</div>
+<div class="order-1 md:order-2">
+<h2 class="text-4xl font-bold tracking-tighter mb-6 uppercase">Fast Quote Creation</h2>
+<p class="text-lg text-secondary mb-8">Stop spending your evenings on admin. Our 90-degree field logic lets you build line items as you walk the roof. Send the professional PDF before you even leave the driveway.</p>
+<div class="p-4 bg-surface border-l-4 border-primary">
+<p class="font-headline font-bold text-xs uppercase tracking-widest">Efficiency Stat</p>
+<p class="text-2xl font-black">74% FASTER ESTIMATING</p>
+</div>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="grid md:grid-cols-2 gap-16 items-center">
+<div>
+<h2 class="text-4xl font-bold tracking-tighter mb-6 uppercase">Pricing &amp; Margin Control</h2>
+<p class="text-lg text-secondary mb-8">Inflation shouldn't eat your profit. Update material prices once and have them reflect across all pending quotes. Set minimum margins so your crew never works for free.</p>
+<div class="flex gap-4">
+<div class="flex-1 p-4 bg-surface border-2 border-outline">
+<span class="label-md font-bold uppercase text-[10px] text-secondary">Labor Margin</span>
+<p class="text-xl font-bold">35.0%</p>
+</div>
+<div class="flex-1 p-4 bg-surface border-2 border-outline">
+<span class="label-md font-bold uppercase text-[10px] text-secondary">Material Cost</span>
+<p class="text-xl font-bold text-primary">FIXED</p>
+</div>
+</div>
+</div>
+<div>
+<div class="border-2 border-outline p-2 bg-surface">
+<img alt="Pricing Controls" class="w-full" data-alt="detailed software screen showing profit margin calculations and material price management for a contractor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOnjUQp_0Y8OexSljxuSFMViZUVqv53jaQMmIIOOdTI6wLTpLK8Rzs_lXTZjKvSf35aMziuYtHtZFHnO1X934kbDpqW8X73x4UkQ1U4rNLpQtdInXkEitH8CHJ4_-kX-YX7LFK_YVD9SCiIF71DJ6eJh5bIktH_IkdkMZGoiVP4qtI3wxN_1C67jm0glHtRODKHES6OoMEWOUtM5n9JOQQPKQ-IN1zpmEFvqpiCkl1NBj5_zYKbrqmx__be91-AEZes66di4ZXXFw"/>
+</div>
+</div>
+</div>
+<!-- Feature 3 & 4 (Bento Style) -->
+<div class="grid md:grid-cols-2 gap-8">
+<div class="p-12 border-2 border-outline bg-surface relative overflow-hidden">
+<h3 class="text-3xl font-bold tracking-tighter mb-4 uppercase">Professional Client Experience</h3>
+<p class="text-secondary">Clients receive a high-end, branded approval portal. No more "I didn't see that in the quote" disputes. Digital audit trails protect your business.</p>
+<span class="material-symbols-outlined text-[120px] absolute -bottom-8 -right-8 opacity-5 text-on-surface">draw</span>
+</div>
+<div class="p-12 border-2 border-outline bg-primary text-on-primary relative overflow-hidden">
+<h3 class="text-3xl font-bold tracking-tighter mb-4 uppercase">Get Paid Faster</h3>
+<p class="opacity-80">Stop chasing checks. Require a 10% deposit upon signature to lock in the job. Integrated credit card and ACH processing built for high-ticket trades.</p>
+<span class="material-symbols-outlined text-[120px] absolute -bottom-8 -right-8 opacity-10 text-on-primary">payments</span>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works -->
+<section class="py-24 px-6 bg-inverse-surface text-inverse-on-surface">
+<div class="max-w-7xl mx-auto">
+<h2 class="text-5xl font-bold tracking-tighter mb-16 uppercase text-center">The Blueprint for Success</h2>
+<div class="grid md:grid-cols-3 gap-12">
+<div class="relative">
+<span class="text-9xl font-black text-white opacity-5 absolute -top-12 -left-4">01</span>
+<h4 class="text-xl font-bold uppercase tracking-widest mb-4">Set your rates</h4>
+<p class="text-surface-variant leading-relaxed">Input your material costs and labor rates. We build the engine that powers your profitability.</p>
+</div>
+<div class="relative">
+<span class="text-9xl font-black text-white opacity-5 absolute -top-12 -left-4">02</span>
+<h4 class="text-xl font-bold uppercase tracking-widest mb-4">Build and send</h4>
+<p class="text-surface-variant leading-relaxed">Point, click, and quote. Our builder handles the math. Send via text or email in seconds.</p>
+</div>
+<div class="relative">
+<span class="text-9xl font-black text-white opacity-5 absolute -top-12 -left-4">03</span>
+<h4 class="text-xl font-bold uppercase tracking-widest mb-4">Win and collect</h4>
+<p class="text-surface-variant leading-relaxed">Customer signs digitally. Deposit hits your bank. The job is locked in and ready for the crew.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Social Proof -->
+<section class="py-24 px-6 bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-end mb-12 border-b-4 border-on-surface pb-6">
+<h2 class="text-4xl font-bold tracking-tighter uppercase">Field Reports</h2>
+<div class="flex gap-1">
+<span class="material-symbols-outlined text-primary" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary" data-weight="fill">star</span>
+</div>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<div class="p-8 border-2 border-outline-variant bg-surface-container">
+<p class="text-lg italic mb-6">"Saves me 5 hours a week on quotes. I used to do them all Sunday night, now they're done before I leave the site."</p>
+<p class="font-headline font-bold uppercase text-xs tracking-widest">Mike R. — Elite Roofing Pros</p>
+</div>
+<div class="p-8 border-2 border-outline-variant bg-surface-container">
+<p class="text-lg italic mb-6">"My estimates actually look professional now. We've increased our close rate by 15% just by having a cleaner presentation."</p>
+<p class="font-headline font-bold uppercase text-xs tracking-widest">Sarah J. — Skyline Exteriors</p>
+</div>
+<div class="p-8 border-2 border-outline-variant bg-surface-container">
+<p class="text-lg italic mb-6">"No more chasing checks. The automatic deposit feature alone paid for the software in the first two weeks."</p>
+<p class="font-headline font-bold uppercase text-xs tracking-widest">Dave K. — Keystone Roofs</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing -->
+<section class="py-24 px-6 bg-surface-container-highest">
+<div class="max-w-3xl mx-auto text-center">
+<h2 class="text-5xl font-bold tracking-tighter mb-6 uppercase">Simple Pricing</h2>
+<p class="text-xl text-secondary mb-12">Simpler and more practical than bloated contractor software.</p>
+<div class="bg-surface border-4 border-on-surface p-12 text-center">
+<span class="font-headline font-bold uppercase tracking-[0.2em] text-sm text-primary mb-4 block">The Core Plan</span>
+<div class="flex justify-center items-baseline gap-2 mb-4">
+<span class="text-6xl font-black tracking-tighter">$49</span>
+<span class="text-xl font-bold text-secondary">/MONTH</span>
+</div>
+<p class="text-secondary font-bold mb-10">EVERY FEATURE INCLUDED. UNLIMITED QUOTES.</p>
+<ul class="text-left space-y-4 mb-10 max-w-xs mx-auto">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> Unlimited Quote Generation</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> Digital Signatures</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> Deposit Collection</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> Material Cost Tracking</li>
+</ul>
+<button class="w-full bg-primary text-on-primary font-headline uppercase tracking-widest font-bold py-5 text-xl mb-4">Start 7-Day Free Trial</button>
+<p class="text-xs text-secondary uppercase tracking-widest">No credit card required to start</p>
+</div>
+</div>
+</section>
+<!-- FAQ -->
+<section class="py-24 px-6 bg-surface">
+<div class="max-w-4xl mx-auto">
+<h2 class="text-4xl font-bold tracking-tighter mb-16 uppercase text-center">Frequently Asked Questions</h2>
+<div class="space-y-4">
+<div class="border-2 border-outline-variant p-6 bg-surface-container-low">
+<h4 class="font-headline font-bold uppercase tracking-widest mb-2">How fast can I actually build a quote?</h4>
+<p class="text-secondary">With your pre-set rates, most users can complete a standard residential roof quote in under 3 minutes while sitting in their truck.</p>
+</div>
+<div class="border-2 border-outline-variant p-6 bg-surface-container-low">
+<h4 class="font-headline font-bold uppercase tracking-widest mb-2">Can I customize the look with my logo?</h4>
+<p class="text-secondary">Yes. Every PDF and client portal is fully branded with your logo, colors, and business information.</p>
+</div>
+<div class="border-2 border-outline-variant p-6 bg-surface-container-low">
+<h4 class="font-headline font-bold uppercase tracking-widest mb-2">Is it hard to set up?</h4>
+<p class="text-secondary">If you can use a smartphone, you can use Forman. Most contractors are fully set up and sending quotes within 20 minutes.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="py-24 px-6 bg-primary text-on-primary text-center">
+<div class="max-w-4xl mx-auto">
+<h2 class="text-5xl md:text-7xl font-bold tracking-tighter mb-8 leading-none uppercase">Run tighter quotes and win more jobs with Forman.</h2>
+<p class="text-xl mb-12 opacity-90 max-w-2xl mx-auto">Join hundreds of roofing contractors who have ditched the clipboard and the bloated CRM for a tool that actually works.</p>
+<button class="bg-surface text-on-surface font-headline uppercase tracking-widest font-bold px-12 py-6 text-2xl hover:bg-surface-container transition-all">Start Your Free Trial</button>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center gap-8 bg-[#2B2B2B] dark:bg-[#1b1c1a] border-t-4 border-[#6a020a]">
+<div class="flex flex-col items-center md:items-start gap-4">
+<div class="text-xl font-black text-[#fbf9f6]">FORMAN</div>
+<p class="font-['Public_Sans'] text-xs tracking-widest uppercase text-[#dfbfbc]">© 2024 FORMAN. RUGGED SOFTWARE FOR RUGGED TRADES.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-8 font-['Public_Sans'] text-xs tracking-widest uppercase">
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">How It Works</a>
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">Pricing</a>
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">Reviews</a>
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">FAQ</a>
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">Terms</a>
+<a class="text-[#dfbfbc] hover:text-[#fbf9f6] transition-colors" href="#">Privacy</a>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#dfbfbc]">construction</span>
+<span class="material-symbols-outlined text-[#dfbfbc]">architecture</span>
+</div>
+</footer>
+</body></html>
