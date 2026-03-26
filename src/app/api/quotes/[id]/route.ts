@@ -194,7 +194,6 @@ export async function DELETE(
     .from("quotes")
     .delete()
     .eq("id", id)
-    .eq("user_id", auth.user.id)
     .select("id");
 
   if (deleteErr) {

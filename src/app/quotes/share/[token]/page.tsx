@@ -113,19 +113,55 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
     deposit_paid_cents: asNumber(row.deposit_paid_cents),
   };
 
+  const effectiveShareToken = (quote.share_token ?? "").trim() || token;
+
   // Record client view (idempotent row via upsert in DB function).
   // We intentionally keep this non-blocking for page rendering.
   const { error: viewTrackError } = await supabase.rpc("track_quote_view", {
     p_quote_id: quote.id,
-    p_token: token,
+    p_token: effectiveShareToken,
   });
-  if (viewTrackError && !isMissingTrackQuoteViewRpc(viewTrackError)) {
-    console.warn("quote view tracking unavailable:", viewTrackError.message);
-  }
 
   // IMPORTANT: share page is public → RLS blocks profiles/stripe_connect_accounts via anon client
   // Use admin client for these two lookups so the prospect can see deposit option if roofer enabled it.
   const admin = createSupabaseAdminClient();
+
+  if (viewTrackError) {
+    // Fallback: write view row directly with admin client when RPC is missing or blocked.
+    const { data: existingView } = await admin
+      .from("quote_views")
+      .select("view_count")
+      .eq("quote_id", quote.id)
+      .maybeSingle<{ view_count: number | null }>();
+
+    const now = new Date().toISOString();
+    const fallbackTrackErr = existingView
+      ? (
+          await admin
+            .from("quote_views")
+            .update({
+              token: effectiveShareToken,
+              last_viewed_at: now,
+              view_count: Math.max(1, (existingView.view_count ?? 0) + 1),
+            })
+            .eq("quote_id", quote.id)
+        ).error
+      : (
+          await admin
+            .from("quote_views")
+            .insert({
+              quote_id: quote.id,
+              token: effectiveShareToken,
+              first_viewed_at: now,
+              last_viewed_at: now,
+              view_count: 1,
+            })
+        ).error;
+
+    if (fallbackTrackErr && !isMissingTrackQuoteViewRpc(viewTrackError)) {
+      console.warn("quote view tracking unavailable:", viewTrackError.message, fallbackTrackErr.message);
+    }
+  }
 
   // Load roofer deposit preference + payments readiness
   const [{ data: prof }, { data: acct }] = await Promise.all([
@@ -178,8 +214,8 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
   if (pct < TARGET_MARGIN && !quote.low_margin_acknowledged_at) {
     return (
       <main className="mx-auto max-w-xl space-y-3 p-6">
-        <h1 className="text-lg font-medium">Quote unavailable</h1>
-        <p className="text-sm text-foreground/70">
+        <h1 className="font-headline text-3xl font-black uppercase tracking-[-0.04em]">Quote unavailable</h1>
+        <p className="text-sm text-muted-foreground">
           This quote is not available to view yet. Please contact the contractor.
         </p>
       </main>
@@ -187,28 +223,33 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-6">
-      <div className="rounded-2xl border bg-card p-6">
+    <main className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="status-strip flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span>Customer quote</span>
+        <span>Approve, review expiration, and pay deposit when enabled</span>
+      </div>
+
+      <div className="paper-panel p-6">
         {approved ? (
-          <div className="mb-4 rounded-xl border p-3 text-sm">
+          <div className="mb-4 border-2 border-[#154625] bg-[#e1f5e6] p-3 text-sm">
             ✅ Approved — the contractor has been notified.
           </div>
         ) : null}
 
-        <div className="text-xs text-foreground/60">Quote</div>
-        <div className="mt-1 text-lg font-medium">{quote.customer_name ?? "Customer"}</div>
-        <div className="mt-1 text-sm text-foreground/70">
+        <div className="forman-kicker">Quote</div>
+        <div className="mt-1 font-headline text-4xl font-black uppercase tracking-[-0.04em]">{quote.customer_name ?? "Customer"}</div>
+        <div className="mt-1 text-sm text-muted-foreground">
           {quote.trade} · {createdLabel ?? ""}
         </div>
 
         {expiresAtLabel ? (
-          <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-foreground/80">
+          <div className="mt-3 border-2 border-border bg-muted p-3 text-xs text-foreground/80">
             {isExpired ? (
-              <Badge variant="secondary" className="mb-2 border-destructive/40 bg-destructive/15 text-destructive">
+              <Badge variant="secondary" className="mb-2 border-destructive bg-[#ffdad6] text-destructive">
                 Expired
               </Badge>
             ) : expiration.isExpiringSoon ? (
-              <Badge variant="outline" className="mb-2 border-amber-500/40 text-amber-300">
+              <Badge variant="outline" className="mb-2 border-primary text-primary">
                 {expiresSoonText ?? "Expiring soon"}
               </Badge>
             ) : null}
@@ -220,38 +261,38 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
           </div>
         ) : null}
 
-        <div className="mt-6 rounded-xl border p-4">
+        <div className="mt-6 paper-inset p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground/70">Total</span>
-            <span className="text-xl font-medium">{money(quote.total)}</span>
+            <span className="field-label mb-0">Total</span>
+            <span className="font-headline text-3xl font-black">{money(quote.total)}</span>
           </div>
-          <div className="mt-3 text-xs text-foreground/60">
+          <div className="mt-3 text-xs text-muted-foreground">
             Includes materials & labor. Tax shown if applicable.
           </div>
         </div>
 
         <div className="mt-5 space-y-3">
-          <div className="rounded-xl border p-4 text-sm">
-            <div className="font-medium">What’s included</div>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-foreground/70">
+          <div className="paper-inset p-4 text-sm">
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">What’s included</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
               <li>Roofing materials & installation</li>
               <li>Site cleanup</li>
               <li>Basic warranty (contractor-provided)</li>
             </ul>
           </div>
 
-          <div className="rounded-xl border p-4 text-sm">
-            <div className="font-medium">What’s excluded</div>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-foreground/70">
+          <div className="paper-inset p-4 text-sm">
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">What’s excluded</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
               <li>Hidden structural repairs discovered after tear-off</li>
               <li>Permit fees unless explicitly listed by contractor</li>
               <li>Change requests not included in this scope</li>
             </ul>
           </div>
 
-          <div className="rounded-xl border p-4 text-sm">
-            <div className="font-medium">Timeline of work</div>
-            <ol className="mt-2 list-decimal space-y-1 pl-5 text-foreground/70">
+          <div className="paper-inset p-4 text-sm">
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Timeline of work</div>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
               <li>Approval and scheduling confirmation</li>
               <li>Material delivery and site preparation</li>
               <li>Installation and daily cleanup (typically 1–3 days)</li>
@@ -259,46 +300,45 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
             </ol>
           </div>
 
-          <div className="rounded-xl border p-4 text-sm">
-            <div className="font-medium">Trust & warranty</div>
-            <div className="mt-2 text-foreground/70">
+          <div className="paper-inset p-4 text-sm">
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Trust & warranty</div>
+            <div className="mt-2 text-muted-foreground">
               Licensed & insured. Warranty details provided by the contractor.
             </div>
           </div>
         </div>
 
-        {/* Deposit payment (optional, roofer-controlled; only after approval) */}
         {depositEnabled && approved ? (
-          <div className="mt-6 rounded-xl border p-4 text-sm">
+          <div className="mt-6 paper-inset p-4 text-sm">
             <div className="flex items-center justify-between">
-              <div className="font-medium">Deposit</div>
-              <div className="text-foreground/70">{depositPercent.toFixed(0)}%</div>
+              <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Deposit</div>
+              <div className="text-muted-foreground">{depositPercent.toFixed(0)}%</div>
             </div>
 
-            <div className="mt-2 text-foreground/70">
+            <div className="mt-2 text-muted-foreground">
               To reserve your spot, deposit due today:{" "}
               <span className="font-medium">{money(depositDueDollars)}</span>
             </div>
-            <div className="mt-2 text-xs text-foreground/60">
+            <div className="mt-2 text-xs text-muted-foreground">
               The remaining balance is handled directly with your contractor at completion.
             </div>
 
             {depositMessage ? (
-              <div className="mt-2 text-xs text-foreground/60">{depositMessage}</div>
+              <div className="mt-2 text-xs text-muted-foreground">{depositMessage}</div>
             ) : null}
 
             {depositPaid ? (
-              <div className="mt-3 rounded-lg border p-2 text-xs">
+              <div className="mt-3 border border-[#154625] bg-[#e1f5e6] p-2 text-xs">
                 ✅ Deposit paid — the contractor has been notified.
               </div>
             ) : isExpired ? (
-              <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+              <div className="mt-3 border border-destructive bg-[#ffdad6] p-2 text-xs text-destructive">
                 Quote is expired. Deposit payment is no longer available.
               </div>
             ) : (
               <div className="mt-3">
                 <PayDepositButton token={token} quoteId={quote.id} />
-                <div className="mt-2 text-xs text-foreground/60">
+                <div className="mt-2 text-xs text-muted-foreground">
                   Secure payment powered by Stripe.
                 </div>
               </div>
@@ -306,9 +346,8 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
           </div>
         ) : null}
 
-        {/* Approve (client-side: approve → maybe redirect later) */}
         {approved ? null : isExpired ? (
-          <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="mt-6 border-2 border-destructive bg-[#ffdad6] p-3 text-sm text-destructive">
             This quote has expired and can no longer be approved online.
           </div>
         ) : (
@@ -317,14 +356,14 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
               token={token}
               quoteId={quote.id}
             />
-            <div className="mt-2 text-xs text-foreground/60">
+            <div className="mt-2 text-xs text-muted-foreground">
               Approval notifies the contractor.
               {depositEnabled && !depositPaid ? " You can pay the deposit right after approval." : ""}
             </div>
           </div>
         )}
 
-        <div className="mt-4 text-xs text-foreground/50">
+        <div className="mt-4 text-xs text-muted-foreground">
           Subtotal: {money(quote.subtotal)} · Tax: {money(quote.tax)}
         </div>
       </div>

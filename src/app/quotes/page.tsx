@@ -21,15 +21,20 @@ export default async function QuotesPage() {
     .limit(200);
 
   return (
-    <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
+    <main className="forman-page">
+      <div className="status-strip flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span>Quote work orders</span>
+        <span>Newest quotes at the top when available from the backend</span>
+      </div>
+
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-sm text-foreground/70">Quotes</div>
-          <h1 className="text-lg font-light tracking-wide">All quotes</h1>
+        <div className="border-l-8 border-primary pl-5">
+          <div className="forman-kicker">Quotes</div>
+          <h1 className="forman-title text-4xl">All quotes</h1>
+          <div className="forman-subtitle mt-2">Live records, share status, duplication, and delete actions preserved.</div>
         </div>
 
         <div className="flex gap-2">
-          {/* ✅ popup gate */}
           <NewQuoteButton />
 
           <Button asChild variant="outline">

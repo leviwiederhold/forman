@@ -8,19 +8,13 @@
 /* shadcn dark-mode selector */
 @custom-variant dark (&:is(.dark *));
 
-/* ================================
-   THEME TOKENS (shadcn / Tailwind v4)
-   ================================ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
-  /* FONT (Forman non-negotiable) */
-  --font-sans: var(--font-quicksand);
+  --font-sans: var(--font-body);
+  --font-headline: var(--font-display);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-
-  /* Core colors */
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -41,7 +35,6 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Sidebar (future-safe) */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -51,7 +44,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Radius scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -61,93 +53,37 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* ================================
-   BASE (light exists, dark forced)
-   ================================ */
 :root {
-  --radius: 0.625rem;
-
-  --background: #ffffff;
-  --foreground: #0f1216;
-
+  --radius: 0.25rem;
+  --background: #fbf9f6;
+  --foreground: #1b1c1a;
   --card: #ffffff;
-  --card-foreground: #0f1216;
-
-  --popover: #ffffff;
-  --popover-foreground: #0f1216;
-
-  --primary: #004aad;
-  --primary-foreground: #f5f7fa;
-
-  --secondary: #eceff3;
-  --secondary-foreground: #0f1216;
-
-  --muted: #f2f4f7;
-  --muted-foreground: rgba(15, 18, 22, 0.68);
-
-  --accent: #e7edf6;
-  --accent-foreground: #0f1216;
-
-  --destructive: #dc2626;
-  --border: rgba(166, 166, 166, 0.35);
-  --input: rgba(166, 166, 166, 0.45);
-  --ring: rgba(0, 74, 173, 0.38);
-
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f1216;
-  --sidebar-primary: #004aad;
-  --sidebar-primary-foreground: #f5f7fa;
-  --sidebar-accent: #eceff3;
-  --sidebar-accent-foreground: #0f1216;
-  --sidebar-border: rgba(166, 166, 166, 0.35);
-  --sidebar-ring: rgba(0, 74, 173, 0.38);
-
-  color-scheme: dark;
+  --card-foreground: #1b1c1a;
+  --popover: #fbf9f6;
+  --popover-foreground: #1b1c1a;
+  --primary: #6a020a;
+  --primary-foreground: #ffffff;
+  --secondary: #5f5e5e;
+  --secondary-foreground: #ffffff;
+  --muted: #efeeeb;
+  --muted-foreground: #5f5e5e;
+  --accent: #efeeeb;
+  --accent-foreground: #1b1c1a;
+  --destructive: #ba1a1a;
+  --border: #8b716e;
+  --input: #8b716e;
+  --ring: #6a020a;
+  --sidebar: #2b2b2b;
+  --sidebar-foreground: #f2f0ed;
+  --sidebar-primary: #6a020a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3d3d3d;
+  --sidebar-accent-foreground: #f2f0ed;
+  --sidebar-border: #8b716e;
+  --sidebar-ring: #dfbfbc;
+  color-scheme: light;
 }
 
-/* ================================
-   DARK MODE (Forman default)
-   ================================ */
-.dark {
-  --background: #05070a;
-  --foreground: #f5f7fa;
-
-  --card: #0b1118;
-  --card-foreground: #f5f7fa;
-
-  --popover: #0b1118;
-  --popover-foreground: #f5f7fa;
-
-  --primary: #004aad;
-  --primary-foreground: #f5f7fa;
-
-  --secondary: #101722;
-  --secondary-foreground: #f5f7fa;
-
-  --muted: #0f151e;
-  --muted-foreground: rgba(166, 166, 166, 0.9);
-
-  --accent: #132033;
-  --accent-foreground: #f5f7fa;
-
-  --destructive: #ef4444;
-  --border: rgba(166, 166, 166, 0.26);
-  --input: rgba(166, 166, 166, 0.34);
-  --ring: rgba(0, 74, 173, 0.5);
-
-  --sidebar: #0a1017;
-  --sidebar-foreground: #f5f7fa;
-  --sidebar-primary: #004aad;
-  --sidebar-primary-foreground: #f5f7fa;
-  --sidebar-accent: #132033;
-  --sidebar-accent-foreground: #f5f7fa;
-  --sidebar-border: rgba(166, 166, 166, 0.26);
-  --sidebar-ring: rgba(0, 74, 173, 0.5);
-}
-
-/* ================================
-   GLOBAL BASE STYLES
-   ================================ */
 html,
 body {
   height: 100%;
@@ -161,10 +97,9 @@ body {
   body {
     @apply bg-background text-foreground font-sans;
     background-image:
-      radial-gradient(circle at 10% -10%, rgba(166, 166, 166, 0.08), transparent 40%),
-      radial-gradient(circle at 82% 8%, rgba(0, 74, 173, 0.2), transparent 34%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0));
-    background-attachment: fixed;
+      linear-gradient(rgba(139, 113, 110, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 113, 110, 0.05) 1px, transparent 1px);
+    background-size: 100% 48px, 48px 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "liga" 1, "kern" 1, "calt" 1;
@@ -173,22 +108,67 @@ body {
   h1,
   h2,
   h3 {
-    font-family: var(--font-display), ui-serif, Georgia, serif;
-    letter-spacing: 0.01em;
+    font-family: var(--font-headline), ui-sans-serif, sans-serif;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--primary) 45%, transparent);
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
     color: var(--primary-foreground);
   }
 }
 
 @layer components {
-  .surface-card {
-    @apply rounded-2xl border bg-card/85 shadow-[0_18px_48px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md transition-[transform,box-shadow,border-color] duration-300;
+  [data-root-main] {
+    @apply transition-[padding] duration-200;
   }
 
-  .surface-card:hover {
-    @apply -translate-y-0.5 border-primary/35 shadow-[0_24px_58px_-28px_rgba(0,74,173,0.55)];
+  body:has([data-app-shell="true"]) [data-root-main] {
+    @apply pt-16 lg:pl-64;
+  }
+
+  .forman-page {
+    @apply mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 sm:py-8;
+  }
+
+  .forman-kicker {
+    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  .forman-title {
+    @apply text-3xl font-black uppercase tracking-[-0.04em] text-foreground sm:text-5xl;
+  }
+
+  .forman-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .paper-panel {
+    @apply border-2 border-border bg-card;
+  }
+
+  .paper-inset {
+    @apply bg-muted border border-[#dfbfbc];
+  }
+
+  .section-rule {
+    @apply border-t-2 border-[#dfbfbc];
+  }
+
+  .field-label {
+    @apply mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  .nav-label {
+    @apply text-xs font-bold uppercase tracking-[0.16em];
+  }
+
+  .status-strip {
+    @apply border-2 border-border bg-[#2f5661] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c3e8ff];
+  }
+
+  .metric-card {
+    @apply border-2 border-[#dfbfbc] bg-white p-5;
   }
 }

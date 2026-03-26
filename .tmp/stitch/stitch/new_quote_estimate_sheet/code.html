@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#f2f0ed",
+              "on-tertiary-fixed-variant": "#004c68",
+              "secondary": "#5f5e5e",
+              "on-primary-fixed": "#410003",
+              "surface-dim": "#dbdad7",
+              "on-primary-fixed-variant": "#891c1d",
+              "surface-container": "#efeeeb",
+              "secondary-fixed": "#e4e2e1",
+              "surface-container-highest": "#e4e2df",
+              "on-tertiary-container": "#86bedf",
+              "error": "#ba1a1a",
+              "tertiary-container": "#004e6a",
+              "on-surface-variant": "#58413f",
+              "surface-tint": "#aa3531",
+              "on-background": "#1b1c1a",
+              "surface-bright": "#fbf9f6",
+              "on-secondary": "#ffffff",
+              "primary": "#6a020a",
+              "surface-variant": "#e4e2df",
+              "on-error-container": "#93000a",
+              "on-surface": "#1b1c1a",
+              "on-secondary-fixed": "#1b1c1c",
+              "tertiary-fixed-dim": "#95ceef",
+              "outline": "#8b716e",
+              "primary-container": "#8b1e1e",
+              "on-secondary-container": "#656464",
+              "inverse-surface": "#30312f",
+              "on-primary": "#ffffff",
+              "surface-container-low": "#f5f3f0",
+              "error-container": "#ffdad6",
+              "secondary-fixed-dim": "#c8c6c5",
+              "surface-container-high": "#eae8e5",
+              "primary-fixed-dim": "#ffb3ad",
+              "on-secondary-fixed-variant": "#474746",
+              "secondary-container": "#e4e2e1",
+              "background": "#fbf9f6",
+              "outline-variant": "#dfbfbc",
+              "surface": "#fbf9f6",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed": "#c3e8ff",
+              "primary-fixed": "#ffdad6",
+              "on-tertiary-fixed": "#001e2c",
+              "inverse-primary": "#ffb3ad",
+              "tertiary": "#00364b",
+              "on-primary-container": "#ff9d95",
+              "on-tertiary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Public Sans"],
+              "label": ["Public Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Public Sans', sans-serif; background-color: #fbf9f6; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- SideNavBar (Shared Component) -->
+<nav class="fixed left-0 top-0 h-full w-64 border-r-2 border-[#8b716e] bg-[#2B2B2B] dark:bg-black flex flex-col py-6 z-50">
+<div class="px-6 mb-10">
+<span class="text-2xl font-black tracking-tighter text-white uppercase font-headline">FORMAN</span>
+<p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">Roofing Utility</p>
+</div>
+<div class="flex-1 space-y-1">
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-3 font-label text-xs tracking-wider uppercase font-bold group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="bg-[#6a020a] text-white font-bold border-l-4 border-white px-4 py-3 mx-2 flex items-center gap-3 font-label text-xs tracking-wider uppercase group" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Quotes
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-3 font-label text-xs tracking-wider uppercase font-bold group" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Customers
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-3 font-label text-xs tracking-wider uppercase font-bold group" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Reports
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-3 font-label text-xs tracking-wider uppercase font-bold group" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+                Pricing
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-3 font-label text-xs tracking-wider uppercase font-bold group" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+                Get Paid
+            </a>
+</div>
+<div class="px-4 mt-auto">
+<div class="flex items-center gap-3 p-3 bg-[#3d3d3d] rounded-sm">
+<div class="w-10 h-10 bg-outline rounded-sm overflow-hidden border border-white/20">
+<img class="w-full h-full object-cover" data-alt="professional contractor wearing a hard hat and safety vest smiling in a construction site setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrkl1v-6abB6DomMhe0igB9tUknaQmFb9XW1aytzttap_JmpV5CjnRA2zB4KjFIB5-rFnfKmFazu1glRxhUEoLMmoMD7LxwZT40n12sCpDqlXISOl5CXMnno_RFcRcc6g4u7n1aEODYZfRGK22joWdzpl70ih_3Wi31pQUg0FfT38Un2U1fOFjkSxTiyI3oztw-1ue3gX3fodjCaTf5NDvY3urALTI8jD9jT6o7Vb-z5uLepHwKg174F8IDa9gGshv8_MMP0zg0Yc"/>
+</div>
+<div>
+<p class="text-white text-xs font-bold font-headline uppercase">J. Miller</p>
+<p class="text-gray-400 text-[10px] uppercase tracking-tighter">Lead Foreman</p>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col bg-surface">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-40 w-full border-b-2 border-[#dfbfbc] bg-[#fbf9f6] flex justify-between items-center h-16 px-8">
+<div class="flex items-center gap-6">
+<h1 class="text-xl font-bold text-[#1b1c1a] font-headline">NEW QUOTE BUILDER</h1>
+<div class="h-4 w-[2px] bg-outline-variant"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="cloud">cloud</span>
+<span class="text-xs font-bold font-label uppercase tracking-widest text-secondary">Weather: Clear / 72°F</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<input class="bg-surface-container border-2 border-outline-variant px-4 py-1 text-sm font-body focus:ring-0 focus:border-primary w-64 transition-all" placeholder="Search Client Database..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary" data-icon="search">search</span>
+</div>
+<button class="p-2 hover:bg-surface-container transition-colors text-secondary">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container transition-colors text-secondary">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Quote Builder Body (Split Screen) -->
+<div class="flex flex-1 overflow-hidden">
+<!-- LEFT: Input Form -->
+<section class="w-1/2 overflow-y-auto p-12 border-r-2 border-outline-variant">
+<div class="max-w-xl mx-auto space-y-12">
+<!-- Customer Info -->
+<div>
+<div class="flex items-center gap-2 mb-6 border-b border-outline pb-2">
+<span class="text-xs font-black font-label uppercase tracking-[0.2em] text-primary">01. Customer Information</span>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="col-span-2">
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Full Client Name</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body text-on-surface" placeholder="e.g. Robert Stevenson" type="text"/>
+</div>
+<div class="col-span-1">
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Phone Number</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body" placeholder="(555) 000-0000" type="tel"/>
+</div>
+<div class="col-span-1">
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Email Address</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body" placeholder="r.stevenson@email.com" type="email"/>
+</div>
+<div class="col-span-2">
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Job Site Address</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body" placeholder="123 Oak Lane, Construction Heights" type="text"/>
+</div>
+</div>
+</div>
+<!-- Roof Details -->
+<div>
+<div class="flex items-center gap-2 mb-6 border-b border-outline pb-2">
+<span class="text-xs font-black font-label uppercase tracking-[0.2em] text-primary">02. Structural Details</span>
+</div>
+<div class="grid grid-cols-3 gap-6">
+<div>
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Total Squares</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body" type="number" value="24"/>
+</div>
+<div>
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Pitch Degree</label>
+<select class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body appearance-none">
+<option>4/12 (Standard)</option>
+<option>6/12 (Steep)</option>
+<option>8/12 (Critical)</option>
+</select>
+</div>
+<div>
+<label class="block text-[10px] font-bold font-label uppercase text-secondary mb-1">Layers to Tear</label>
+<input class="w-full bg-transparent border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-2 font-body" type="number" value="1"/>
+</div>
+</div>
+</div>
+<!-- Materials -->
+<div>
+<div class="flex items-center gap-2 mb-6 border-b border-outline pb-2">
+<span class="text-xs font-black font-label uppercase tracking-[0.2em] text-primary">03. Material Selection</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container border border-outline-variant">
+<div>
+<p class="text-xs font-bold font-headline uppercase">Architectural Shingles</p>
+<p class="text-[10px] text-secondary font-body">Premium Weather-Shield Series</p>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-sm font-bold">$112.50 / SQ</span>
+<input checked="" class="h-5 w-5 rounded-none border-2 border-outline text-primary focus:ring-0" type="checkbox"/>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container border border-outline-variant">
+<div>
+<p class="text-xs font-bold font-headline uppercase">Synthetic Underlayment</p>
+<p class="text-[10px] text-secondary font-body">Non-slip high-temp protection</p>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-sm font-bold">$45.00 / ROLL</span>
+<input checked="" class="h-5 w-5 rounded-none border-2 border-outline text-primary focus:ring-0" type="checkbox"/>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-transparent border border-outline-variant border-dashed">
+<button class="w-full text-center text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-colors">
+                                    + Add Custom Line Item
+                                </button>
+</div>
+</div>
+</div>
+<div class="pt-8">
+<button class="w-full bg-primary text-white py-4 font-headline font-bold text-lg tracking-widest uppercase hover:brightness-110 active:scale-[0.98] transition-all">
+                            Finalize Estimate &amp; Save
+                        </button>
+</div>
+</div>
+</section>
+<!-- RIGHT: LIVE ESTIMATE (Receipt Style) -->
+<section class="w-1/2 bg-surface-container-low p-12 overflow-y-auto">
+<div class="max-w-md mx-auto bg-white shadow-sm border border-outline-variant p-8 relative overflow-hidden">
+<!-- Physical Receipt Aesthetic -->
+<div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+<div class="flex justify-between items-start mb-12">
+<div>
+<p class="text-2xl font-black font-headline tracking-tighter uppercase leading-none">FORMAN</p>
+<p class="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Estimating Utility v2.4</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold font-label uppercase text-secondary">Quote Number</p>
+<p class="font-bold text-sm tracking-tighter">#Q-88294-TX</p>
+<p class="text-[10px] font-bold font-label uppercase text-secondary mt-2">Date Generated</p>
+<p class="font-bold text-sm tracking-tighter">OCT 24, 2023</p>
+</div>
+</div>
+<div class="space-y-6">
+<div class="border-b-2 border-on-surface pb-1 mb-2">
+<h3 class="text-xs font-black uppercase tracking-widest font-headline">Live Estimate Summary</h3>
+</div>
+<!-- Line Items -->
+<div class="space-y-3">
+<div class="flex justify-between items-end border-b border-dotted border-outline-variant pb-1">
+<div class="flex-1">
+<p class="text-xs font-bold uppercase leading-tight">Architectural Shingles</p>
+<p class="text-[10px] text-secondary">24 Squares @ $112.50</p>
+</div>
+<span class="font-bold text-sm">$2,700.00</span>
+</div>
+<div class="flex justify-between items-end border-b border-dotted border-outline-variant pb-1">
+<div class="flex-1">
+<p class="text-xs font-bold uppercase leading-tight">Synthetic Underlayment</p>
+<p class="text-[10px] text-secondary">6 Rolls @ $45.00</p>
+</div>
+<span class="font-bold text-sm">$270.00</span>
+</div>
+<div class="flex justify-between items-end border-b border-dotted border-outline-variant pb-1">
+<div class="flex-1">
+<p class="text-xs font-bold uppercase leading-tight">Tear Off &amp; Disposal</p>
+<p class="text-[10px] text-secondary">Standard 1-Layer Removal</p>
+</div>
+<span class="font-bold text-sm">$1,200.00</span>
+</div>
+<div class="flex justify-between items-end border-b border-dotted border-outline-variant pb-1">
+<div class="flex-1">
+<p class="text-xs font-bold uppercase leading-tight">Ridge Vent Installation</p>
+<p class="text-[10px] text-secondary">80 Linear Feet</p>
+</div>
+<span class="font-bold text-sm">$640.00</span>
+</div>
+</div>
+<!-- Totals Section -->
+<div class="pt-8 space-y-2">
+<div class="flex justify-between text-xs font-bold uppercase">
+<span>Subtotal</span>
+<span>$4,810.00</span>
+</div>
+<div class="flex justify-between text-xs font-bold uppercase text-secondary">
+<span>Sales Tax (8.25%)</span>
+<span>$396.83</span>
+</div>
+<div class="flex justify-between text-xs font-bold uppercase text-secondary">
+<span>Permit &amp; Filing Fees</span>
+<span>$150.00</span>
+</div>
+<div class="mt-8 pt-4 border-t-4 border-on-surface">
+<div class="flex justify-between items-baseline">
+<span class="text-lg font-black font-headline uppercase tracking-tighter">Total Estimate</span>
+<span class="text-3xl font-black font-headline tracking-tighter">$5,356.83</span>
+</div>
+<p class="text-[9px] uppercase font-bold text-secondary text-right mt-1">* Valid for 14 calendar days from date of issue</p>
+</div>
+</div>
+</div>
+<!-- Stamp Placeholder -->
+<div class="mt-16 flex justify-center opacity-10 rotate-[-15deg]">
+<div class="border-4 border-primary p-4 rounded-lg">
+<p class="text-3xl font-black text-primary font-headline uppercase leading-none">FORMAN APPROVED</p>
+</div>
+</div>
+<!-- QR and Fine Print -->
+<div class="mt-12 flex items-end justify-between border-t border-outline-variant pt-4">
+<div class="w-12 h-12 bg-secondary opacity-20">
+<!-- QR Code Placeholder -->
+</div>
+<div class="text-[8px] text-secondary font-bold uppercase text-right leading-tight max-w-[200px]">
+                            This document serves as a preliminary quote only. Final project cost is subject to change upon physical inspection of site deck integrity.
+                        </div>
+</div>
+</div>
+<!-- Floating Punch List Action -->
+<div class="max-w-md mx-auto mt-6 flex gap-4">
+<button class="flex-1 flex items-center justify-center gap-2 bg-secondary text-white py-3 font-label text-[10px] font-bold uppercase tracking-widest hover:brightness-110 transition-all">
+<span class="material-symbols-outlined" data-icon="print">print</span>
+                        Print Copy
+                    </button>
+<button class="flex-1 flex items-center justify-center gap-2 bg-[#1b1c1a] text-white py-3 font-label text-[10px] font-bold uppercase tracking-widest hover:brightness-110 transition-all">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+                        Send to Client
+                    </button>
+</div>
+</section>
+</div>
+</main>
+</body></html>

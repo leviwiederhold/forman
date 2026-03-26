@@ -113,9 +113,7 @@ export function QuoteActions({
     try {
       const url = await ensureShareUrl();
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-        await navigator.share({
-          url,
-        });
+        await navigator.share({ url });
         return;
       }
       const parsed = new URL(url);
@@ -131,6 +129,7 @@ export function QuoteActions({
     const ok = await requireGuardrail();
     setGuardBusy(false);
     if (!ok) return;
+
     let url = "";
     try {
       url = await ensureShareUrl();
@@ -145,9 +144,7 @@ export function QuoteActions({
       `Here is your quote link:\n${url}\n\n` +
       `Total: ${money(total)}\n`;
 
-    window.location.href = `mailto:?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
   async function onDuplicate() {
@@ -174,6 +171,7 @@ export function QuoteActions({
     if (busy) return;
     const ok = window.confirm("Delete this quote? This cannot be undone.");
     if (!ok) return;
+
     setBusy(true);
     try {
       const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
@@ -200,26 +198,28 @@ export function QuoteActions({
   return (
     <div className="space-y-3">
       {comparisonWarning ? (
-        <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3">
-          <div className="text-sm font-medium text-amber-200">Price Comparison Advisory</div>
+        <div className="border-2 border-[#8b716e] bg-[#ffead1] p-3">
+          <div className="forman-kicker text-primary">Price comparison advisory</div>
           <div className="mt-1 text-xs text-foreground/80">{comparisonWarning}</div>
         </div>
       ) : null}
+
       {monthlyTargetWarning ? (
-        <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3">
-          <div className="text-sm font-medium text-amber-200">Monthly Goal Advisory</div>
+        <div className="border-2 border-[#8b716e] bg-[#ffead1] p-3">
+          <div className="forman-kicker text-primary">Monthly goal advisory</div>
           <div className="mt-1 text-xs text-foreground/80">{monthlyTargetWarning}</div>
         </div>
       ) : null}
 
       {isLowMargin ? (
-        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">
+        <div className="border-2 border-destructive bg-[#ffdad6] p-3">
+          <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em] text-destructive">
             Margin below floor ({TARGET_MARGIN.toFixed(0)}%)
           </div>
           <div className="mt-1 text-xs text-foreground/80">
             Current margin is {marginPct.toFixed(1)}%. You must acknowledge this low-margin quote before sending.
           </div>
+
           {!isAcknowledged ? (
             <label className="mt-3 inline-flex items-center gap-2 text-sm">
               <Checkbox
@@ -236,55 +236,56 @@ export function QuoteActions({
           ) : (
             <div className="mt-2 text-xs text-yellow-600">Low-margin acknowledgment saved.</div>
           )}
+
           {guardError ? <div className="mt-2 text-xs text-destructive">{guardError}</div> : null}
         </div>
       ) : null}
 
-      <div className="rounded-xl border bg-background/40 p-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" className="h-9 border-foreground/20 bg-transparent px-3">
+      <div className="paper-inset p-3">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <Button asChild variant="outline" className="h-10 w-full px-3 sm:h-9 sm:w-auto">
             <Link href={`/quotes/${id}/edit`} className="inline-flex items-center gap-2">
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
               Edit
             </Link>
           </Button>
 
-          <Button className="h-9 px-4" onClick={onShare} disabled={blockSend || sendBusy}>
-            <Send className="mr-2 h-3.5 w-3.5" />
+          <Button className="h-10 w-full px-4 sm:h-9 sm:w-auto" onClick={onShare} disabled={blockSend || sendBusy}>
+            <Send className="mr-2 h-4 w-4 sm:h-3.5 sm:w-3.5" />
             {sendBusy ? "Sending..." : "Share quote"}
           </Button>
+        </div>
 
-          <div className={`ml-auto rounded-full border px-2.5 py-1 text-xs ${marginTextClass}`}>
+        <div className="mt-2 flex justify-start sm:justify-end">
+          <div className={`rounded-sm border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${marginTextClass}`}>
             Margin {marginPct.toFixed(1)}%
             {isLowMargin && isAcknowledged ? " acknowledged" : ""}
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-foreground/70">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground/75">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs text-foreground/75 hover:text-foreground"
+            className="h-7 px-1 text-xs text-foreground/75 hover:text-foreground"
             onClick={onEmail}
             disabled={busy || sendBusy}
           >
             Email
           </Button>
-          <span className="text-foreground/35">•</span>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs text-foreground/75 hover:text-foreground"
+            className="h-7 px-1 text-xs text-foreground/75 hover:text-foreground"
             onClick={onDuplicate}
             disabled={busy || sendBusy}
           >
             Duplicate
           </Button>
-          <span className="text-foreground/35">•</span>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs text-destructive/85 hover:text-destructive"
+            className="h-7 px-1 text-xs text-destructive hover:text-destructive"
             onClick={onDelete}
             disabled={busy || sendBusy}
           >

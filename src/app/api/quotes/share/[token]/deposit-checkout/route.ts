@@ -204,7 +204,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    ui_mode: "hosted",
     line_items: [
       {
         quantity: 1,

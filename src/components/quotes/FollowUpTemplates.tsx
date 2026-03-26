@@ -105,12 +105,12 @@ export function FollowUpTemplates(props: FollowUpTemplatesProps) {
 
   return (
     <div className="rounded-xl border p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-medium">Follow-up messages</div>
           <div className="text-xs text-foreground/60">Ready-to-send templates for SMS or email.</div>
         </div>
-        <Button variant="outline" type="button" onClick={() => setOpen((v) => !v)}>
+        <Button className="w-full sm:w-auto" variant="outline" type="button" onClick={() => setOpen((v) => !v)}>
           {open ? "Hide templates" : "Generate follow-up"}
         </Button>
       </div>
@@ -140,4 +140,3 @@ export function FollowUpTemplates(props: FollowUpTemplatesProps) {
     </div>
   );
 }
-

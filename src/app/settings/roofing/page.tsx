@@ -23,12 +23,12 @@ export default async function RoofingSettingsPage() {
   const initialRates = (data?.rates_json ?? ROOFING_RATE_DEFAULTS) as typeof ROOFING_RATE_DEFAULTS;
 
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-[1400px] space-y-8">
-        {/* Page header */}
-        <header className="space-y-2">
-          <h1 className="text-lg font-light tracking-wide">Pricing</h1>
-          <p className="text-sm text-foreground/70">
+    <main className="forman-page">
+      <div className="space-y-8">
+        <header className="border-l-8 border-primary pl-5">
+          <div className="forman-kicker">Pricing</div>
+          <h1 className="forman-title text-4xl">Roofing rate card</h1>
+          <p className="forman-subtitle mt-2">
             Set the default rates used for new roofing quotes. You can still add custom items per quote.
           </p>
         </header>
@@ -39,8 +39,8 @@ export default async function RoofingSettingsPage() {
 
         <section className="space-y-3">
           <div>
-            <div className="text-sm font-medium">Saved items</div>
-            <div className="text-xs text-foreground/60">
+            <div className="forman-kicker">Saved items</div>
+            <div className="text-xs text-muted-foreground">
               Extras you can include on quotes (never added automatically).
             </div>
           </div>

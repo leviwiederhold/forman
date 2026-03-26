@@ -351,13 +351,15 @@ export function NewQuoteClient({
 
   return (
     <div className="grid gap-6 xl:grid-cols-12">
-      {/* LEFT — FORM */}
-      <div className="space-y-6 rounded-2xl border bg-card p-5 xl:col-span-7">
-        <div className="text-sm text-foreground/80">Quote details</div>
+      <div className="space-y-6 paper-panel p-5 xl:col-span-7">
+        <div>
+          <div className="forman-kicker">01. Customer information</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Quote details</div>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <div className="text-xs text-foreground/60">Customer name</div>
+            <div className="field-label">Customer name</div>
             <Input
               value={inputs.customer_name}
               onChange={(e) =>
@@ -373,7 +375,7 @@ export function NewQuoteClient({
           </div>
 
           <div className="space-y-1 sm:col-span-2">
-            <div className="text-xs text-foreground/60">Customer address</div>
+            <div className="field-label">Customer address</div>
             <Textarea
               value={inputs.customer_address ?? ""}
               onChange={(e) =>
@@ -388,11 +390,14 @@ export function NewQuoteClient({
 
         <Separator />
 
-        <div className="text-sm text-foreground/80">Roof details</div>
+        <div>
+          <div className="forman-kicker">02. Structural details</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Roof details</div>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
-            <div className="text-xs text-foreground/60">Roof size</div>
+            <div className="field-label">Roof size</div>
             <Input
               type="number"
               value={inputs.roof_size_value}
@@ -405,7 +410,7 @@ export function NewQuoteClient({
           </div>
 
           <div className="space-y-1">
-            <div className="text-xs text-foreground/60">Unit</div>
+            <div className="field-label">Unit</div>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -445,7 +450,7 @@ export function NewQuoteClient({
           </div>
 
           <div className="space-y-1">
-            <div className="text-xs text-foreground/60">Pitch</div>
+            <div className="field-label">Pitch</div>
             <Input
               value={inputs.pitch}
               onChange={(e) =>
@@ -460,15 +465,17 @@ export function NewQuoteClient({
 
         <Separator />
 
-        {/* ✅ ADD-ONS (THIS WAS MISSING) */}
-        <div className="text-sm text-foreground/80">Add-ons</div>
+        <div>
+          <div className="forman-kicker">03. Scope options</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Add-ons</div>
+        </div>
         <div className="space-y-2">
-          <div className="rounded-xl border px-3 py-3 space-y-3">
+          <div className="paper-inset space-y-3 px-3 py-3">
             {/* Ridge vent */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-foreground/85">Ridge vent</div>
-                <div className="text-xs text-foreground/60">Per LF</div>
+                <div className="min-w-0">
+                <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">Ridge vent</div>
+                <div className="text-xs text-muted-foreground">Per LF</div>
               </div>
               <Checkbox
                 checked={selections.ridge_vent_selected}
@@ -481,7 +488,7 @@ export function NewQuoteClient({
             </div>
             {selections.ridge_vent_selected ? (
               <div className="flex items-center justify-between gap-4">
-                <div className="text-xs text-foreground/60">Linear feet (LF)</div>
+                <div className="field-label mb-0">Linear feet (LF)</div>
                 <NumInput
                   value={selections.ridge_vent_lf}
                   onChange={(n) =>
@@ -496,9 +503,9 @@ export function NewQuoteClient({
 
             {/* Drip edge */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-foreground/85">Drip edge</div>
-                <div className="text-xs text-foreground/60">Per LF</div>
+                <div className="min-w-0">
+                <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">Drip edge</div>
+                <div className="text-xs text-muted-foreground">Per LF</div>
               </div>
               <Checkbox
                 checked={selections.drip_edge_selected}
@@ -511,7 +518,7 @@ export function NewQuoteClient({
             </div>
             {selections.drip_edge_selected ? (
               <div className="flex items-center justify-between gap-4">
-                <div className="text-xs text-foreground/60">Linear feet (LF)</div>
+                <div className="field-label mb-0">Linear feet (LF)</div>
                 <NumInput
                   value={selections.drip_edge_lf}
                   onChange={(n) =>
@@ -526,9 +533,9 @@ export function NewQuoteClient({
 
             {/* Ice & water */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-foreground/85">Ice & water shield</div>
-                <div className="text-xs text-foreground/60">Per square</div>
+                <div className="min-w-0">
+                <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">Ice & water shield</div>
+                <div className="text-xs text-muted-foreground">Per square</div>
               </div>
               <Checkbox
                 checked={selections.ice_water_selected}
@@ -541,7 +548,7 @@ export function NewQuoteClient({
             </div>
             {selections.ice_water_selected ? (
               <div className="flex items-center justify-between gap-4">
-                <div className="text-xs text-foreground/60">Squares</div>
+                <div className="field-label mb-0">Squares</div>
                 <NumInput
                   value={selections.ice_water_squares}
                   onChange={(n) =>
@@ -556,9 +563,9 @@ export function NewQuoteClient({
 
             {/* One-time fees */}
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-foreground/85">Steep roof charge</div>
-                <div className="text-xs text-foreground/60">Flat fee</div>
+                <div className="min-w-0">
+                <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">Steep roof charge</div>
+                <div className="text-xs text-muted-foreground">Flat fee</div>
               </div>
               <Checkbox
                 checked={selections.steep_charge_selected}
@@ -571,9 +578,9 @@ export function NewQuoteClient({
             </div>
 
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-sm text-foreground/85">Permit fee</div>
-                <div className="text-xs text-foreground/60">Flat fee</div>
+                <div className="min-w-0">
+                <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">Permit fee</div>
+                <div className="text-xs text-muted-foreground">Flat fee</div>
               </div>
               <Checkbox
                 checked={selections.permit_fee_selected}
@@ -589,10 +596,13 @@ export function NewQuoteClient({
 
         <Separator />
 
-        <div className="text-sm text-foreground/80">Saved items (My Items)</div>
+        <div>
+          <div className="forman-kicker">04. Saved extras</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Saved items</div>
+        </div>
         <div className="space-y-2">
           {customItems.length === 0 ? (
-            <div className="text-sm text-foreground/60">
+            <div className="text-sm text-muted-foreground">
               No saved items yet. Add some in{" "}
               <a className="underline underline-offset-4" href="/settings/roofing">
                 Pricing
@@ -603,11 +613,11 @@ export function NewQuoteClient({
             customItems.map((it) => (
               <div
                 key={it.id}
-                className="flex items-center justify-between rounded-xl border px-3 py-2"
+                className="paper-inset flex items-center justify-between px-3 py-3"
               >
                 <div className="space-y-0.5">
-                  <div className="text-sm">{it.name}</div>
-                  <div className="text-xs text-foreground/60">
+                  <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">{it.name}</div>
+                  <div className="text-xs text-muted-foreground">
                     {it.pricing_type === "flat"
                       ? `$${Number(it.unit_price).toFixed(2)} flat`
                       : `$${Number(it.unit_price).toFixed(2)} / ${it.unit_label ?? "unit"}`}
@@ -646,13 +656,16 @@ export function NewQuoteClient({
         {/* One-time items editor */}
         {selections.one_time_custom_items.length > 0 ? (
           <div className="space-y-3">
-            <div className="text-sm text-foreground/80">One-time items</div>
+            <div>
+              <div className="forman-kicker">05. One-time items</div>
+              <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Custom line items</div>
+            </div>
 
             {selections.one_time_custom_items.map((it, idx) => (
-              <div key={idx} className="rounded-xl border p-3 space-y-3">
+              <div key={idx} className="paper-inset p-3 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1 sm:col-span-2">
-                    <div className="text-xs text-foreground/60">Name</div>
+                    <div className="field-label">Name</div>
                     <Input
                       value={it.name}
                       onChange={(e) => updateOneTimeItem(idx, { name: e.target.value })}
@@ -661,7 +674,7 @@ export function NewQuoteClient({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-foreground/60">Pricing type</div>
+                    <div className="field-label">Pricing type</div>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -681,7 +694,7 @@ export function NewQuoteClient({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-foreground/60">Unit price</div>
+                    <div className="field-label">Unit price</div>
                     <Input
                       type="number"
                       value={it.unit_price}
@@ -694,7 +707,7 @@ export function NewQuoteClient({
                   {it.pricing_type === "per_unit" ? (
                     <>
                       <div className="space-y-1">
-                        <div className="text-xs text-foreground/60">Quantity</div>
+                        <div className="field-label">Quantity</div>
                         <Input
                           type="number"
                           value={it.quantity ?? 1}
@@ -705,7 +718,7 @@ export function NewQuoteClient({
                       </div>
 
                       <div className="space-y-1">
-                        <div className="text-xs text-foreground/60">Unit label</div>
+                        <div className="field-label">Unit label</div>
                         <Input
                           value={it.unit_label ?? ""}
                           onChange={(e) =>
@@ -725,7 +738,7 @@ export function NewQuoteClient({
                         checked={Boolean(it.taxable)}
                         onCheckedChange={(v) => updateOneTimeItem(idx, { taxable: Boolean(v) })}
                       />
-                      <span className="text-xs text-foreground/70">Taxable</span>
+                      <span className="text-xs text-muted-foreground">Taxable</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -735,7 +748,7 @@ export function NewQuoteClient({
                           updateOneTimeItem(idx, { save_to_account: Boolean(v) })
                         }
                       />
-                      <span className="text-xs text-foreground/70">Save to my items</span>
+                      <span className="text-xs text-muted-foreground">Save to my items</span>
                     </div>
                   </div>
 
@@ -749,24 +762,24 @@ export function NewQuoteClient({
         ) : null}
       </div>
 
-      {/* RIGHT — PREVIEW */}
-      <div className="space-y-4 rounded-2xl border bg-card p-5 xl:col-span-5">
+      <div className="space-y-4 paper-panel p-5 xl:col-span-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm text-foreground/80">Estimate preview</div>
-            <div className="text-xs text-foreground/60">
+            <div className="forman-kicker">Live preview</div>
+            <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Estimate preview</div>
+            <div className="text-xs text-muted-foreground">
               Live totals (server recalculates on save)
             </div>
           </div>
-          <div className="text-xs text-foreground/60">
+          <div className="text-xs text-muted-foreground">
             Squares: {toSquares(inputs.roof_size_value, inputs.roof_size_unit).toFixed(2)}
           </div>
         </div>
 
-        <div className="rounded-xl border p-3 text-sm">
+        <div className="paper-inset p-3 text-sm">
           <div className="flex items-center justify-between">
-            <div className="text-foreground/80">Totals</div>
-            <div className="text-xs text-foreground/60">Markup: {pricing.markup_percent}%</div>
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Totals</div>
+            <div className="text-xs text-muted-foreground">Markup: {pricing.markup_percent}%</div>
           </div>
 
           <div className="mt-2 space-y-1 text-foreground/70">
@@ -786,9 +799,9 @@ export function NewQuoteClient({
         </div>
 
         {historical.sampleCount >= 5 && historical.recommendedTotal ? (
-          <div className="rounded-xl border p-3 text-sm">
-            <div className="text-foreground/80">Historical pricing guide</div>
-            <div className="mt-1 text-xs text-foreground/60">
+          <div className="paper-inset p-3 text-sm">
+            <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Historical pricing guide</div>
+            <div className="mt-1 text-xs text-muted-foreground">
               Based on {historical.sampleCount} recent quotes at about $
               {historical.medianPricePerSquare?.toFixed(0) ?? "0"} per square.
             </div>
@@ -798,7 +811,7 @@ export function NewQuoteClient({
               {(historical.upperRangeTotal ?? 0).toFixed(0)}.
             </div>
             {typeof historicalVariancePct === "number" && Math.abs(historicalVariancePct) >= 8 ? (
-              <div className="mt-2 text-xs text-amber-300">
+              <div className="mt-2 text-xs text-[#8b1e1e]">
                 Current total is {Math.abs(historicalVariancePct).toFixed(1)}%{" "}
                 {historicalVariancePct >= 0 ? "above" : "below"} your recent baseline.
               </div>
@@ -806,14 +819,14 @@ export function NewQuoteClient({
           </div>
         ) : null}
 
-        <div className="rounded-xl border p-3 text-sm">
-          <div className="text-foreground/80">Line items</div>
+        <div className="paper-inset p-3 text-sm">
+          <div className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">Line items</div>
           <div className="mt-3 space-y-2">
             {pricing.line_items.map((it, idx) => (
               <div key={idx} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="truncate text-foreground/80">{it.name}</div>
-                  <div className="text-xs text-foreground/60">
+                  <div className="text-xs text-muted-foreground">
                     {it.quantity} {it.unit} × ${Number(it.unit_price).toFixed(2)}
                   </div>
                 </div>
