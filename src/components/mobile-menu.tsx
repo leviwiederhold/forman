@@ -79,6 +79,26 @@ export function MobileMenu() {
         <BillingStatusBadge />
 
         <nav className="mt-6 space-y-2">
+          {NAV.filter((item) => item.href === "/dashboard").map((item) => {
+            const active = isActive(pathname, item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={[
+                  "flex items-center gap-3 border-l-4 px-3 py-3 nav-label transition-colors",
+                  active
+                    ? "border-l-primary bg-muted text-foreground"
+                    : "border-l-transparent text-foreground/75 hover:bg-muted hover:text-foreground",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+
           <NewQuoteButton
             appearance="nav"
             className={[
@@ -89,7 +109,7 @@ export function MobileMenu() {
             ].join(" ")}
           />
 
-          {NAV.map((item) => {
+          {NAV.filter((item) => item.href !== "/dashboard").map((item) => {
             const active = isActive(pathname, item.href);
             const Icon = item.icon;
             return (

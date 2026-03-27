@@ -3,8 +3,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PayDepositButton } from "@/components/pay-deposit-button";
 import { ApproveAndMaybePayButton } from "@/components/approve-and-maybe-pay-button";
-import { formatExpiresIn, getQuoteExpirationStatus } from "@/lib/quotes/expiration";
-import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +17,6 @@ type QuoteShareView = {
   tax: number | null;
   total: number | null;
   created_at: string | null;
-  expires_at: string | null;
   share_token: string | null;
   low_margin_acknowledged_at: string | null;
   deposit_paid_at: string | null;
@@ -106,7 +103,6 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
     tax: asNumber(row.tax),
     total: asNumber(row.total),
     created_at: asString(row.created_at),
-    expires_at: asString(row.expires_at),
     share_token: asString(row.share_token),
     low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
     deposit_paid_at: asString(row.deposit_paid_at),
@@ -202,10 +198,6 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
   const approvedViaStatus = (quote.status ?? "").toLowerCase() === "accepted";
   const approved = approvedViaQuery || approvedViaStatus;
   const createdLabel = formatDate(quote.created_at);
-  const expiration = getQuoteExpirationStatus(quote.expires_at);
-  const expiresAtLabel = formatDate(quote.expires_at);
-  const isExpired = expiration.isExpired;
-  const expiresSoonText = formatExpiresIn(expiration.msRemaining);
 
   // Server-enforced Profit Guardrail
   const TARGET_MARGIN = 30;
@@ -241,25 +233,6 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
         <div className="mt-1 text-sm text-muted-foreground">
           {quote.trade} · {createdLabel ?? ""}
         </div>
-
-        {expiresAtLabel ? (
-          <div className="mt-3 border-2 border-border bg-muted p-3 text-xs text-foreground/80">
-            {isExpired ? (
-              <Badge variant="secondary" className="mb-2 border-destructive bg-[#ffdad6] text-destructive">
-                Expired
-              </Badge>
-            ) : expiration.isExpiringSoon ? (
-              <Badge variant="outline" className="mb-2 border-primary text-primary">
-                {expiresSoonText ?? "Expiring soon"}
-              </Badge>
-            ) : null}
-            {isExpired
-              ? `This quote expired on ${expiresAtLabel}. Contact your contractor to refresh pricing and availability.`
-              : expiration.isExpiringSoon
-              ? `${expiresSoonText ?? "Expiring soon"} · valid through ${expiresAtLabel}.`
-              : `This quote is valid through ${expiresAtLabel}.`}
-          </div>
-        ) : null}
 
         <div className="mt-6 paper-inset p-4">
           <div className="flex items-center justify-between">
@@ -331,10 +304,6 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
               <div className="mt-3 border border-[#154625] bg-[#e1f5e6] p-2 text-xs">
                 ✅ Deposit paid — the contractor has been notified.
               </div>
-            ) : isExpired ? (
-              <div className="mt-3 border border-destructive bg-[#ffdad6] p-2 text-xs text-destructive">
-                Quote is expired. Deposit payment is no longer available.
-              </div>
             ) : (
               <div className="mt-3">
                 <PayDepositButton token={token} quoteId={quote.id} />
@@ -346,11 +315,7 @@ export default async function QuoteSharePage({ params, searchParams }: PageProps
           </div>
         ) : null}
 
-        {approved ? null : isExpired ? (
-          <div className="mt-6 border-2 border-destructive bg-[#ffdad6] p-3 text-sm text-destructive">
-            This quote has expired and can no longer be approved online.
-          </div>
-        ) : (
+        {approved ? null : (
           <div className="mt-6">
             <ApproveAndMaybePayButton
               token={token}

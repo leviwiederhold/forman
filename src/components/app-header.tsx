@@ -81,11 +81,17 @@ export default function AppHeader() {
         </div>
 
         <nav className="flex-1 py-5">
+          <NavLink
+            href="/dashboard"
+            label="Dashboard"
+            icon={LayoutDashboard}
+            active={isActive(pathname, "/dashboard")}
+          />
           <NewQuoteButton
             appearance="nav"
             className={newQuoteActive ? "mx-2 border-l-4 border-l-white bg-primary text-white" : "mx-2 border-l-4 border-l-transparent text-white/65 hover:bg-sidebar-accent hover:text-white"}
           />
-          {NAV.map((item) => (
+          {NAV.filter((item) => item.href !== "/dashboard").map((item) => (
             <NavLink
               key={item.href}
               href={item.href}

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 
 export const dynamic = "force-dynamic";
 
@@ -28,22 +27,21 @@ export async function POST(req: Request, ctx: Ctx) {
       admin = null;
     }
 
-    let quote: { id: string; status: string | null; expires_at: string | null; share_token?: string | null } | null = null;
+    let quote: { id: string; status: string | null; share_token?: string | null } | null = null;
 
     if (bodyQuoteId) {
       let byId:
-        | { id: string; status: string | null; expires_at: string | null; share_token: string | null }
+        | { id: string; status: string | null; share_token: string | null }
         | null = null;
 
       if (admin) {
         const { data } = await admin
           .from("quotes")
-          .select("id, status, expires_at, share_token")
+          .select("id, status, share_token")
           .eq("id", bodyQuoteId)
           .maybeSingle<{
             id: string;
             status: string | null;
-            expires_at: string | null;
             share_token: string | null;
           }>();
         byId = data ?? null;
@@ -52,12 +50,11 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!byId) {
         const { data } = await supabase
           .from("quotes")
-          .select("id, status, expires_at, share_token")
+          .select("id, status, share_token")
           .eq("id", bodyQuoteId)
           .maybeSingle<{
             id: string;
             status: string | null;
-            expires_at: string | null;
             share_token: string | null;
           }>();
         byId = data ?? null;
@@ -72,29 +69,29 @@ export async function POST(req: Request, ctx: Ctx) {
     if (admin && bodyQuoteId && !quote) {
       const { data: adminById } = await admin
         .from("quotes")
-        .select("id, status, expires_at")
+        .select("id, status")
         .eq("id", bodyQuoteId)
         .eq("share_token", normalizedToken)
-        .maybeSingle<{ id: string; status: string | null; expires_at: string | null }>();
+        .maybeSingle<{ id: string; status: string | null }>();
       quote = adminById ?? null;
     }
 
     if (admin && !quote) {
       const { data: adminQuote } = await admin
         .from("quotes")
-        .select("id, status, expires_at, share_token")
+        .select("id, status, share_token")
         .eq("share_token", normalizedToken)
-        .maybeSingle<{ id: string; status: string | null; expires_at: string | null; share_token: string | null }>();
+        .maybeSingle<{ id: string; status: string | null; share_token: string | null }>();
       quote = adminQuote ?? null;
     }
 
     if (!quote && bodyQuoteId) {
       const { data: fallbackById } = await supabase
         .from("quotes")
-        .select("id, status, expires_at")
+        .select("id, status")
         .eq("id", bodyQuoteId)
         .eq("share_token", normalizedToken)
-        .maybeSingle<{ id: string; status: string | null; expires_at: string | null }>();
+        .maybeSingle<{ id: string; status: string | null }>();
       quote = fallbackById ?? null;
     }
 
@@ -122,9 +119,9 @@ export async function POST(req: Request, ctx: Ctx) {
 
       const { data: fallbackQuote, error: fallbackErr } = await supabase
         .from("quotes")
-        .select("id, status, expires_at, share_token")
+        .select("id, status, share_token")
         .eq("share_token", normalizedToken)
-        .maybeSingle<{ id: string; status: string | null; expires_at: string | null; share_token: string | null }>();
+        .maybeSingle<{ id: string; status: string | null; share_token: string | null }>();
       if (fallbackErr) {
         return NextResponse.json(
           {
@@ -144,10 +141,6 @@ export async function POST(req: Request, ctx: Ctx) {
         );
       }
       quote = fallbackQuote;
-    }
-
-    if (getQuoteExpirationStatus(quote.expires_at).isExpired) {
-      return NextResponse.json({ error: "Quote expired" }, { status: 410 });
     }
 
     const currentStatus = (quote.status ?? "").toLowerCase();

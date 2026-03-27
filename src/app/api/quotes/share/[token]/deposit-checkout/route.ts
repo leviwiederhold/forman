@@ -5,7 +5,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 
 type DepositBody = { quoteId?: string };
 type QuoteLookupRow = {
@@ -14,7 +13,6 @@ type QuoteLookupRow = {
   subtotal: number | null;
   total: number | null;
   status: string | null;
-  expires_at: string | null;
   share_token: string | null;
   low_margin_acknowledged_at: string | null;
   deposit_paid_at: string | null;
@@ -46,7 +44,6 @@ function toQuoteLookupRow(row: Record<string, unknown> | null): QuoteLookupRow |
     subtotal: asNumber(row.subtotal),
     total: asNumber(row.total),
     status: asString(row.status),
-    expires_at: asString(row.expires_at),
     share_token: asString(row.share_token),
     low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
     deposit_paid_at: asString(row.deposit_paid_at),
@@ -143,10 +140,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   }
 
   const effectiveShareToken = (quote.share_token ?? "").trim() || normalizedToken;
-
-  if (getQuoteExpirationStatus(quote.expires_at).isExpired) {
-    return NextResponse.json({ error: "Quote expired" }, { status: 410 });
-  }
 
   const status = (quote.status ?? "").toLowerCase();
   if (status !== "accepted") {
