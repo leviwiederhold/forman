@@ -181,7 +181,7 @@ export default async function Home() {
 
           <div className="hidden items-center gap-2 md:flex">
             <Button asChild variant="ghost">
-              <Link href="/login">Log In</Link>
+              <Link href="/login?redirectTo=%2Fdashboard">Log In</Link>
             </Button>
             <Button asChild>
               <Link href="/signup">Start Free Trial</Link>
@@ -197,7 +197,7 @@ export default async function Home() {
               <a href="#pricing" className="nav-label text-foreground/80">Pricing</a>
               <a href="#reviews" className="nav-label text-foreground/80">Reviews</a>
               <a href="#faq" className="nav-label text-foreground/80">FAQ</a>
-              <Link href="/login" className="nav-label text-foreground/80">Log In</Link>
+              <Link href="/login?redirectTo=%2Fdashboard" className="nav-label text-foreground/80">Log In</Link>
               <Link href="/signup" className="nav-label text-primary">Start Free Trial</Link>
             </div>
           </details>
@@ -514,7 +514,7 @@ export default async function Home() {
           </div>
           <div className="flex flex-wrap gap-4 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             <Link href="/pricing">Pricing</Link>
-            <Link href="/login">Login</Link>
+            <Link href="/login?redirectTo=%2Fdashboard">Login</Link>
             <Link href="/signup">Sign Up</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>

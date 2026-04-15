@@ -53,11 +53,11 @@ export function MobileMenu() {
   }, [open]);
   const overlay = (
     <div
-      className="fixed inset-0 z-[2147483647] bg-background"
+      className="fixed inset-0 z-[2147483647] overflow-y-auto bg-background"
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex h-16 items-center justify-between border-b-2 border-[#dfbfbc] px-4">
+      <div className="sticky top-0 flex h-16 items-center justify-between border-b-2 border-[#dfbfbc] bg-background px-4">
         <Link
           href="/dashboard"
           className="font-headline text-xl font-black uppercase tracking-[-0.08em]"
@@ -68,14 +68,14 @@ export function MobileMenu() {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="border-2 border-border p-2 text-foreground transition hover:bg-muted"
+          className="inline-flex h-10 w-10 items-center justify-center border-2 border-border bg-white text-foreground transition hover:bg-muted"
           aria-label="Close menu"
         >
           <X size={20} />
         </button>
       </div>
 
-      <div className="px-4 py-6">
+      <div className="px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
         <BillingStatusBadge />
 
         <nav className="mt-6 space-y-2">
@@ -149,7 +149,7 @@ export function MobileMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="border-2 border-border bg-white p-2 text-foreground transition hover:bg-muted"
+        className="inline-flex h-10 w-10 items-center justify-center border-2 border-border bg-white text-foreground transition hover:bg-muted"
         aria-label="Open menu"
       >
         <Menu size={20} />

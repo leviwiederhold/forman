@@ -54,7 +54,7 @@ export default function PricingPage() {
       </section>
 
       <footer className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
-        <Link className="underline" href="/login">Login</Link>
+        <Link className="underline" href="/login?redirectTo=%2Fdashboard">Login</Link>
         <Link className="underline" href="/privacy">Privacy</Link>
         <Link className="underline" href="/terms">Terms</Link>
       </footer>

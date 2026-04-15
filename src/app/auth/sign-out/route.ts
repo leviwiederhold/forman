@@ -4,5 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function POST(_req: NextRequest) {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/login", _req.url), { status: 303 });
+  const loginUrl = new URL("/login", _req.url);
+  loginUrl.searchParams.set("signed_out", "1");
+  return NextResponse.redirect(loginUrl, { status: 303 });
 }

@@ -120,7 +120,7 @@ export default function AppHeader() {
         <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
           <div className="min-w-0">
             <div className="forman-kicker">Forman work board</div>
-            <div className="font-headline text-lg font-bold uppercase tracking-[-0.04em] text-foreground">
+            <div className="truncate font-headline text-lg font-bold uppercase tracking-[-0.04em] text-foreground">
               {newQuoteActive ? "New Quote Builder" : NAV.find((item) => isActive(pathname, item.href))?.label ?? "Workspace"}
             </div>
           </div>
@@ -129,8 +129,10 @@ export default function AppHeader() {
             <BillingStatusBadge />
           </div>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            <BillingStatusBadge />
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <div className="hidden sm:block">
+              <BillingStatusBadge />
+            </div>
             <MobileMenu />
           </div>
         </div>

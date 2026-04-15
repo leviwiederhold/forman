@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DemoQuoteLinkButton } from "@/components/demo-quote-link-button";
 
 export default function DemoPage() {
   const [name, setName] = React.useState("");
@@ -60,6 +61,7 @@ export default function DemoPage() {
             <Button asChild>
               <Link href="/signup">Start Free Trial</Link>
             </Button>
+            <DemoQuoteLinkButton sourcePage="/demo" />
             <Button asChild variant="outline">
               <Link href="/">Back to landing page</Link>
             </Button>
@@ -89,6 +91,7 @@ export default function DemoPage() {
             <Button onClick={submit} disabled={loading || !email}>
               {loading ? "Sending..." : "Book Demo"}
             </Button>
+            <DemoQuoteLinkButton sourcePage="/demo" />
             <Button asChild variant="outline">
               <Link href="/signup">Start Free Trial</Link>
             </Button>
