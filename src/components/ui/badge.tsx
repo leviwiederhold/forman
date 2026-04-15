@@ -12,17 +12,17 @@ export function Badge({
 }: BadgeProps) {
   const variants: Record<NonNullable<BadgeProps["variant"]>, string> = {
     default:
-      "bg-foreground text-background border-transparent",
+      "bg-foreground text-background border-foreground",
     secondary:
-      "bg-muted text-foreground border-transparent",
+      "bg-muted text-foreground border-border",
     outline:
-      "bg-transparent text-foreground border",
+      "bg-transparent text-foreground border-border",
   };
 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border",
+        "inline-flex items-center rounded-sm px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] border",
         variants[variant],
         className
       )}

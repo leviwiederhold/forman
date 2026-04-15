@@ -10,6 +10,7 @@ export default function FeedbackPage() {
   const [email, setEmail] = React.useState("");
   const [done, setDone] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [notice, setNotice] = React.useState<string | null>(null);
 
   async function submit() {
     setLoading(true);
@@ -22,8 +23,19 @@ export default function FeedbackPage() {
         page: typeof window !== "undefined" ? window.location.pathname : null,
       }),
     });
+    const body = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      emailSent?: boolean;
+      warning?: string;
+      error?: string;
+    };
     setLoading(false);
-    if (res.ok) setDone(true);
+    if (!res.ok || !body.ok) {
+      setNotice(body.error ?? "Could not submit feedback. Please try again.");
+      return;
+    }
+    setDone(true);
+    setNotice(body.warning ?? null);
   }
 
   if (done) {
@@ -31,6 +43,7 @@ export default function FeedbackPage() {
       <main className="mx-auto max-w-xl p-6">
         <div className="rounded-2xl border bg-card p-6">
           Thanks — feedback received 🙌
+          {notice ? <div className="mt-2 text-sm text-amber-300">{notice}</div> : null}
         </div>
       </main>
     );
@@ -52,6 +65,7 @@ export default function FeedbackPage() {
       <Button onClick={submit} disabled={loading || !message}>
         {loading ? "Sending…" : "Submit"}
       </Button>
+      {notice ? <div className="text-sm text-amber-300">{notice}</div> : null}
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
+import { Public_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import AppHeader from "@/components/app-header";
@@ -10,26 +10,27 @@ export const metadata: Metadata = {
   description: "Contractor quoting app",
 };
 
+const bodyFont = Public_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
+
+const headlineFont = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body
-        className="font-sans antialiased min-h-screen flex flex-col"
-        style={
-          {
-            "--font-quicksand":
-              "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
-            "--font-display": "ui-serif, Georgia, Cambria, \"Times New Roman\", serif",
-          } as CSSProperties
-        }
-      >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${bodyFont.variable} ${headlineFont.variable} font-sans antialiased min-h-screen flex flex-col`}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AppHeader />
-          <main className="flex-1">{children}</main>
+          <main data-root-main className="flex-1">{children}</main>
           <Footer />
         </ThemeProvider>
       </body>

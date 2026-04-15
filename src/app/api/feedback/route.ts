@@ -28,20 +28,50 @@ export async function POST(req: NextRequest) {
 
   // Email
   const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
+  if (!resendKey) {
+    return NextResponse.json({
+      ok: true,
+      emailSent: false,
+      warning: "Feedback saved, but RESEND_API_KEY is not configured.",
+    });
+  }
+
+  try {
     const resend = new Resend(resendKey);
-    const to = process.env.FEEDBACK_TO_EMAIL ?? "levi.wiederhold@gmail.com";
+    const to = process.env.FEEDBACK_TO_EMAIL ?? "info@formanusa.com";
     // Use a safe default sender that works on Resend even without a custom domain.
     const from =
       process.env.FEEDBACK_FROM_EMAIL ?? "Forman Feedback <onboarding@resend.dev>";
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from,
       to,
       subject: `Forman feedback (${contactEmail})`,
       text: `User: ${userEmail}\nContact: ${contactEmail}\nPage: ${page || "unknown"}\n\n${message}`,
     });
+
+    if ((result as { error?: { message?: string } })?.error) {
+      const msg = (result as { error?: { message?: string } }).error?.message ?? "Unknown email provider error";
+      return NextResponse.json(
+        {
+          ok: true,
+          emailSent: false,
+          warning: `Feedback saved, but email failed: ${msg}`,
+        },
+        { status: 200 }
+      );
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown email send error";
+    return NextResponse.json(
+      {
+        ok: true,
+        emailSent: false,
+        warning: `Feedback saved, but email failed: ${msg}`,
+      },
+      { status: 200 }
+    );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, emailSent: true });
 }

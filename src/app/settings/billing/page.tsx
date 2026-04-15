@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { ConnectStripeButton } from "@/components/connect-stripe-button";
 import { StripeRefreshButton } from "@/components/stripe-refresh-button";
 import { getStripeConnectStatus } from "@/lib/billing/stripe-connect-status";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,28 +37,29 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   const isConnected = status !== "not_connected";
 
   return (
-    <main className="mx-auto max-w-xl p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-medium">Get Paid</h1>
-        <p className="text-sm text-foreground/70 mt-1">
+    <main className="forman-page max-w-4xl">
+      <div className="border-l-8 border-primary pl-5">
+        <div className="forman-kicker">Get Paid</div>
+        <h1 className="forman-title text-4xl">Stripe connection</h1>
+        <p className="forman-subtitle mt-2">
           Connect Stripe so customers can pay deposits.
         </p>
       </div>
 
       {connectState === "retry" ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+        <div className="paper-panel border-amber-500 p-3 text-sm text-foreground">
           Stripe onboarding is still incomplete. Continue setup and refresh status when done.
         </div>
       ) : null}
       {connectState === "error" ? (
-        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="paper-panel border-destructive p-3 text-sm text-destructive">
           We couldn&apos;t update Stripe status right now. Please try again.
         </div>
       ) : null}
 
-      <div className="rounded-xl border p-4 space-y-3">
+      <div className="paper-panel p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="font-medium">Connection</div>
+          <div className="font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Connection</div>
           {status === "not_connected" ? (
             <Badge variant="secondary">Not connected</Badge>
           ) : status === "connected" ? (

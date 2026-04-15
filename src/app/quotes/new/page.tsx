@@ -130,7 +130,7 @@ export default async function NewQuotePage() {
   // ✅ Instead of redirecting to /billing, SHOW A FRIENDLY MESSAGE
   if (!ent.canCreateQuotes) {
     return (
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
+      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <Link href="/dashboard">
             <Button variant="outline">← Back</Button>
@@ -172,7 +172,7 @@ export default async function NewQuotePage() {
     rateCard = await loadRoofingRateCardForUser(supabase, auth.user.id);
   } catch (err) {
     return (
-      <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <Link href="/quotes">
             <Button variant="outline">← Back</Button>
@@ -267,41 +267,46 @@ export default async function NewQuotePage() {
   const historicalSamples = (historicalRows ?? []) as HistoricalQuoteSample[];
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <main className="forman-page">
       <div className="flex items-center justify-between gap-3">
         <Link href="/quotes">
           <Button variant="outline">← Back</Button>
         </Link>
-        <div className="text-sm text-foreground/60">New Quote</div>
+        <div className="forman-kicker">New Quote</div>
       </div>
 
       {zero ? (
-        <div className="rounded-2xl border bg-card p-4 text-sm text-destructive">
+        <div className="paper-panel p-4 text-sm text-destructive">
           Roofing rate card loaded but looks like all zeros. Check Pricing → Roofing.
         </div>
       ) : null}
 
-      <section className="rounded-2xl border bg-card p-4">
-        <div className="text-sm font-medium">Before you send</div>
-        <div className="mt-2 grid gap-2 text-sm text-foreground/75 md:grid-cols-3">
-          <div className="rounded-lg border bg-background/40 p-3">
-            <div className="text-xs text-foreground/60">Margin floor</div>
+      <div className="border-l-8 border-primary pl-5">
+        <div className="forman-kicker">Estimate sheet</div>
+        <h1 className="forman-title text-4xl">New quote builder</h1>
+      </div>
+
+      <section className="paper-panel p-4">
+        <div className="forman-kicker">Before you send</div>
+        <div className="mt-3 grid gap-2 text-sm text-foreground/75 md:grid-cols-3">
+          <div className="paper-inset p-3">
+            <div className="field-label">Margin floor</div>
             <div className="mt-1">Aim to stay at or above 30% margin.</div>
           </div>
-          <div className="rounded-lg border bg-background/40 p-3">
-            <div className="text-xs text-foreground/60">Deposit option</div>
+          <div className="paper-inset p-3">
+            <div className="field-label">Deposit option</div>
             <div className="mt-1">
               {depositEnabled
                 ? `Enabled at ${depositPercent.toFixed(0)}% for shared quotes.`
                 : "Not enabled yet. Turn on deposits to reduce cancellations."}
             </div>
           </div>
-          <div className="rounded-lg border bg-background/40 p-3">
-            <div className="text-xs text-foreground/60">Client response</div>
+          <div className="paper-inset p-3">
+            <div className="field-label">Client response</div>
             <div className="mt-1">Shared quotes show view status and expiry to guide follow-up.</div>
           </div>
         </div>
-        <div className="mt-2 text-xs text-foreground/60">
+        <div className="mt-2 text-xs text-muted-foreground">
           {hasSavedDefaults
             ? "Saved defaults are applied to this form."
             : "Tip: after setting your preferred scope choices, use “Save as defaults” in the editor."}

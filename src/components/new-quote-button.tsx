@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { FilePlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Ent = {
@@ -82,11 +83,13 @@ export function NewQuoteButton({
       onClick={handleClick}
       disabled={loading}
       className={[
-        "rounded-xl px-3 py-1.5 text-sm font-medium text-foreground/70 transition-all hover:bg-white/8 hover:text-foreground",
+        "flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left nav-label transition-colors",
+        "border-l-transparent text-inherit hover:bg-inherit hover:text-inherit",
         "disabled:opacity-60 disabled:cursor-not-allowed",
         className,
       ].join(" ")}
     >
+      <FilePlus2 className="h-4 w-4" />
       {loading ? "Checking…" : label}
     </button>
   );

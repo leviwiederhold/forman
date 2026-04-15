@@ -16,14 +16,14 @@ function Pill({
   variant?: "default" | "outline" | "danger";
 }) {
   const base =
-    "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium";
+    "inline-flex items-center rounded-sm border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em]";
 
   const styles =
     variant === "danger"
-      ? "bg-red-500/10 text-red-600"
+      ? "border-destructive bg-[#ffdad6] text-destructive"
       : variant === "outline"
-      ? "border border-white/20 text-foreground/70"
-      : "bg-emerald-500/10 text-emerald-600";
+      ? "border-border bg-white text-foreground/70"
+      : "border-[#154625] bg-[#e1f5e6] text-[#154625]";
 
   return <span className={`${base} ${styles}`}>{children}</span>;
 }

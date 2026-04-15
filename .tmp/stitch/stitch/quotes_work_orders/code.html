@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FORMAN - Quotes Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Public+Sans:wght@300..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#f2f0ed",
+              "on-tertiary-fixed-variant": "#004c68",
+              "secondary": "#5f5e5e",
+              "on-primary-fixed": "#410003",
+              "surface-dim": "#dbdad7",
+              "on-primary-fixed-variant": "#891c1d",
+              "surface-container": "#efeeeb",
+              "secondary-fixed": "#e4e2e1",
+              "surface-container-highest": "#e4e2df",
+              "on-tertiary-container": "#86bedf",
+              "error": "#ba1a1a",
+              "tertiary-container": "#004e6a",
+              "on-surface-variant": "#58413f",
+              "surface-tint": "#aa3531",
+              "on-background": "#1b1c1a",
+              "surface-bright": "#fbf9f6",
+              "on-secondary": "#ffffff",
+              "primary": "#6a020a",
+              "surface-variant": "#e4e2df",
+              "on-error-container": "#93000a",
+              "on-surface": "#1b1c1a",
+              "on-secondary-fixed": "#1b1c1c",
+              "tertiary-fixed-dim": "#95ceef",
+              "outline": "#8b716e",
+              "primary-container": "#8b1e1e",
+              "on-primary-container": "#ff9d95",
+              "on-tertiary": "#ffffff",
+              "inverse-surface": "#30312f",
+              "background": "#fbf9f6",
+              "outline-variant": "#dfbfbc",
+              "surface": "#fbf9f6",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed": "#c3e8ff",
+              "primary-fixed": "#ffdad6",
+              "on-tertiary-fixed": "#001e2c",
+              "inverse-primary": "#ffb3ad",
+              "tertiary": "#00364b",
+              "surface-container-low": "#f5f3f0",
+              "error-container": "#ffdad6",
+              "secondary-fixed-dim": "#c8c6c5",
+              "surface-container-high": "#eae8e5",
+              "primary-fixed-dim": "#ffb3ad",
+              "on-secondary-fixed-variant": "#474746",
+              "secondary-container": "#e4e2e1"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Public Sans"],
+              "label": ["Public Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Public Sans', sans-serif; background-color: #fbf9f6; }
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="text-on-surface bg-background antialiased overflow-x-hidden">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r-2 border-[#8b716e] bg-[#2B2B2B] dark:bg-black flex flex-col py-6 shadow-[1px_0_0_0_rgba(27,28,26,0.1)] z-50">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-[#6a020a] flex items-center justify-center border-2 border-[#8b716e]">
+<span class="text-white font-black text-xl font-headline">F</span>
+</div>
+<div>
+<h1 class="text-2xl font-black tracking-tighter text-white uppercase font-headline leading-none">FORMAN</h1>
+<p class="text-[10px] text-gray-400 font-bold tracking-widest uppercase font-label mt-1">Roofing Utility</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-4 hover:bg-[#3d3d3d]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Dashboard</span>
+</a>
+<a class="bg-[#6a020a] text-white font-bold border-l-4 border-white px-4 py-3 mx-2 flex items-center gap-4" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Quotes</span>
+</a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-4 hover:bg-[#3d3d3d]" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Customers</span>
+</a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-4 hover:bg-[#3d3d3d]" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Reports</span>
+</a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-4 hover:bg-[#3d3d3d]" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Pricing</span>
+</a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mx-2 transition-colors flex items-center gap-4 hover:bg-[#3d3d3d]" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="text-xs tracking-wider uppercase font-bold font-label">Get Paid</span>
+</a>
+</nav>
+<div class="px-6 pt-6 border-t border-[#3d3d3d]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-gray-600 border border-[#8b716e] flex-shrink-0">
+<img alt="Contractor Profile" class="w-full h-full object-cover grayscale opacity-80" data-alt="professional contractor headshot with serious expression in industrial setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVcWSYMxTQBSIx99qe3q42FpCqKSTRXinybSIscTaIZzY0nh3nE_HRCvm8S34MPk1rYzZRfU87bvraXmQ0asKE6WCk8xiIEsjUNJ_hVDxotq3VTnPI6gRgFSuGXT2gH3u-7TmxaMsrcJ5wNn7RPZ5EAJraXmmJ_HZuMLuItL6itkc6c4k-VSigXfBQVjqt5t76IQwXEt0My5HGHaY5qya_Al_-2OQFtlQl37b2K-LzDLYn0dlUdtrst1zcb4rCW1WKQdZ4KLlJcrg"/>
+</div>
+<div class="min-w-0">
+<p class="text-white text-xs font-bold truncate">H. Miller</p>
+<p class="text-gray-400 text-[10px] uppercase font-label">Foreman</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar Anchor -->
+<header class="sticky top-0 z-40 w-[calc(100%-16rem)] ml-64 h-16 px-8 flex justify-between items-center bg-[#fbf9f6] dark:bg-[#1b1c1a] border-b-2 border-[#dfbfbc]">
+<div class="flex items-center gap-4 w-full max-w-xl">
+<span class="material-symbols-outlined text-secondary" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full font-body placeholder-secondary" placeholder="Search quotes, customers, or job IDs..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-secondary hover:text-[#6a020a] transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-[#6a020a] border border-white"></span>
+</button>
+<button class="text-secondary hover:text-[#6a020a] transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 p-8 min-h-[calc(100vh-4rem)]">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="text-4xl font-black font-headline text-on-surface tracking-tighter uppercase leading-none">QUOTES</h2>
+<div class="mt-2 flex items-center gap-4">
+<span class="bg-tertiary-container text-[#86bedf] px-3 py-1 text-[10px] font-bold tracking-widest uppercase font-label flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="cloud">cloud</span>
+                        Weather: Clear / 72°F
+                    </span>
+<span class="text-secondary text-xs font-medium font-body italic">Showing newest quotes from all active sites</span>
+</div>
+</div>
+<button class="bg-[#8B1E1E] text-white px-8 py-3 font-label font-bold text-sm tracking-widest uppercase flex items-center gap-3 hover:ring-2 hover:ring-inset hover:ring-[#ff9d95] transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                NEW QUOTE
+            </button>
+</div>
+<!-- Filter Bar -->
+<div class="flex items-center gap-8 mb-6 pb-2 border-b border-outline-variant">
+<button class="text-[#6a020a] font-bold text-xs uppercase tracking-widest border-b-2 border-[#6a020a] pb-2">All Quotes (42)</button>
+<button class="text-secondary hover:text-on-surface transition-colors font-medium text-xs uppercase tracking-widest pb-2">Pending (12)</button>
+<button class="text-secondary hover:text-on-surface transition-colors font-medium text-xs uppercase tracking-widest pb-2">Approved (28)</button>
+<button class="text-secondary hover:text-on-surface transition-colors font-medium text-xs uppercase tracking-widest pb-2">Declined (2)</button>
+</div>
+<!-- Quote List (Stack of Work Orders) -->
+<div class="space-y-4">
+<!-- Quote Row 1 -->
+<div class="bg-white border-2 border-outline-variant p-6 flex items-center justify-between hover:border-[#8b716e] transition-all relative overflow-hidden group">
+<div class="flex-1 flex items-start gap-8">
+<div class="w-16">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">ID</p>
+<p class="font-headline font-bold text-on-surface">#9821</p>
+</div>
+<div class="w-48">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Customer</p>
+<p class="font-bold text-on-surface leading-tight">Lawrence Richardson</p>
+<p class="text-xs text-secondary font-medium">124 Oakwood Ave, Seattle</p>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Job Description</p>
+<p class="text-sm text-on-surface-variant font-medium">Asphalt shingle replacement &amp; gutter reinforcement on 2,400 sqft residential structure.</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Total Price</p>
+<p class="text-xl font-black font-headline text-on-surface">$8,450.00</p>
+</div>
+<div class="w-28 text-center">
+<span class="inline-block w-full py-1 text-[10px] font-bold tracking-widest text-[#004e6a] border-2 border-[#004e6a] uppercase font-label bg-tertiary-fixed-dim/10">SENT</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="edit">edit</span></button>
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+</div>
+<!-- Quote Row 2 -->
+<div class="bg-[#fbf9f6] border-2 border-[#1b1c1a] p-6 flex items-center justify-between hover:border-primary transition-all relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#1b1c1a]"></div>
+<div class="flex-1 flex items-start gap-8">
+<div class="w-16">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">ID</p>
+<p class="font-headline font-bold text-on-surface">#9819</p>
+</div>
+<div class="w-48">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Customer</p>
+<p class="font-bold text-on-surface leading-tight">M. G. Properties Ltd.</p>
+<p class="text-xs text-secondary font-medium">808 Industrial Way, Kent</p>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Job Description</p>
+<p class="text-sm text-on-surface-variant font-medium">Emergency tarping and structural assessment following localized storm damage.</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Total Price</p>
+<p class="text-xl font-black font-headline text-on-surface">$2,120.50</p>
+</div>
+<div class="w-28 text-center">
+<span class="inline-block w-full py-1 text-[10px] font-bold tracking-widest text-[#154625] border-2 border-[#154625] uppercase font-label bg-[#e1f5e6]">APPROVED</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="print">print</span></button>
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+</div>
+<!-- Quote Row 3 -->
+<div class="bg-white border-2 border-outline-variant p-6 flex items-center justify-between hover:border-[#8b716e] transition-all relative overflow-hidden group">
+<div class="flex-1 flex items-start gap-8">
+<div class="w-16">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">ID</p>
+<p class="font-headline font-bold text-on-surface">#9815</p>
+</div>
+<div class="w-48">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Customer</p>
+<p class="font-bold text-on-surface leading-tight">Alice Henderson</p>
+<p class="text-xs text-secondary font-medium">442 Riverside Dr, Auburn</p>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Job Description</p>
+<p class="text-sm text-on-surface-variant font-medium">Skylight replacement (x3) and deck perimeter flashing repair.</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Total Price</p>
+<p class="text-xl font-black font-headline text-on-surface">$5,900.00</p>
+</div>
+<div class="w-28 text-center">
+<span class="inline-block w-full py-1 text-[10px] font-bold tracking-widest text-secondary border-2 border-secondary uppercase font-label bg-secondary-container">SENT</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="edit">edit</span></button>
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+</div>
+<!-- Quote Row 4 -->
+<div class="bg-surface-container-low border-2 border-outline-variant opacity-75 p-6 flex items-center justify-between hover:border-[#8b716e] transition-all relative overflow-hidden group">
+<div class="flex-1 flex items-start gap-8">
+<div class="w-16">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">ID</p>
+<p class="font-headline font-bold text-on-surface">#9798</p>
+</div>
+<div class="w-48">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Customer</p>
+<p class="font-bold text-on-surface leading-tight">K. Sutherland</p>
+<p class="text-xs text-secondary font-medium">1198 Maple St, Tacoma</p>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Job Description</p>
+<p class="text-sm text-on-surface-variant font-medium">Flat roof silver-coating and debris clearing for commercial warehouse.</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Total Price</p>
+<p class="text-xl font-black font-headline text-on-surface-variant">$12,400.00</p>
+</div>
+<div class="w-28 text-center">
+<span class="inline-block w-full py-1 text-[10px] font-bold tracking-widest text-[#6a020a] border-2 border-[#6a020a] uppercase font-label bg-error-container/30">DECLINED</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="history">history</span></button>
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+</div>
+<!-- Quote Row 5 -->
+<div class="bg-white border-2 border-outline-variant p-6 flex items-center justify-between hover:border-[#8b716e] transition-all relative overflow-hidden group">
+<div class="flex-1 flex items-start gap-8">
+<div class="w-16">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">ID</p>
+<p class="font-headline font-bold text-on-surface">#9790</p>
+</div>
+<div class="w-48">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Customer</p>
+<p class="font-bold text-on-surface leading-tight">Dr. Victor Vance</p>
+<p class="text-xs text-secondary font-medium">92 Harbor View, Gig Harbor</p>
+</div>
+<div class="flex-1">
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Job Description</p>
+<p class="text-sm text-on-surface-variant font-medium">Full cedar shake treatment and chimney flashing overhaul.</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase font-label mb-1">Total Price</p>
+<p class="text-xl font-black font-headline text-on-surface">$14,800.00</p>
+</div>
+<div class="w-28 text-center">
+<span class="inline-block w-full py-1 text-[10px] font-bold tracking-widest text-[#154625] border-2 border-[#154625] uppercase font-label bg-[#e1f5e6]">APPROVED</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="print">print</span></button>
+<button class="p-2 text-secondary hover:text-[#6a020a]"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination / Footer -->
+<div class="mt-12 flex justify-between items-center bg-surface-container p-4 border-2 border-outline-variant">
+<p class="text-xs font-bold text-secondary uppercase font-label tracking-widest">Showing 1-10 of 42 Quotes</p>
+<div class="flex items-center gap-1">
+<button class="w-10 h-10 border-2 border-outline text-secondary flex items-center justify-center hover:bg-white"><span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span></button>
+<button class="w-10 h-10 border-2 border-[#6a020a] bg-[#6a020a] text-white flex items-center justify-center font-bold">1</button>
+<button class="w-10 h-10 border-2 border-outline text-secondary flex items-center justify-center hover:bg-white">2</button>
+<button class="w-10 h-10 border-2 border-outline text-secondary flex items-center justify-center hover:bg-white">3</button>
+<button class="w-10 h-10 border-2 border-outline text-secondary flex items-center justify-center hover:bg-white"><span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span></button>
+</div>
+</div>
+</main>
+<!-- FAB (Suppressed based on context: Details screens, but showing here as it's a Dashboard level list) -->
+<div class="fixed bottom-8 right-8 flex flex-col gap-4">
+<button class="w-16 h-16 bg-[#6a020a] text-white flex items-center justify-center shadow-lg border-2 border-white hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="history_edu" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+</button>
+</div>
+</body></html>

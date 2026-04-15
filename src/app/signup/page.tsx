@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DemoQuoteLinkButton } from "@/components/demo-quote-link-button";
 
 export const dynamic = "force-dynamic";
 
@@ -18,46 +19,67 @@ export default async function SignupPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
-      <div>
-        <div className="text-sm text-foreground/70">Create account</div>
-        <h1 className="text-lg font-light tracking-wide">Sign up</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm text-foreground/70">Create account</div>
+          <h1 className="text-lg font-light tracking-wide">Sign up</h1>
+        </div>
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/login?redirectTo=%2Fdashboard">Log in</Link>
+        </Button>
       </div>
 
-      {error || message ? (
-        <div className="rounded-xl border p-3 text-sm">
-          <div className="font-medium">Signup error</div>
-          <div className="mt-1 text-foreground/70">
-            {message ?? "Something went wrong."}
+      <div className="rounded-2xl border bg-card p-5 shadow-none">
+        {error || message ? (
+          <div className="rounded-xl border p-3 text-sm">
+            <div className="font-medium">Signup error</div>
+            <div className="mt-1 text-foreground/70">
+              {message ?? "Something went wrong."}
+            </div>
           </div>
+        ) : null}
+
+        <form action="/api/auth/signup" method="post" className="space-y-3">
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            required
+            className="w-full rounded-xl border bg-white px-3 py-2 text-base md:text-sm"
+          />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            required
+            className="w-full rounded-xl border bg-white px-3 py-2 text-base md:text-sm"
+          />
+
+          <Button type="submit" className="w-full">
+            Create account
+          </Button>
+        </form>
+
+        <div className="mt-4 flex flex-col gap-2 text-sm text-foreground/70 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Already have an account?{" "}
+            <Link className="underline" href="/login?redirectTo=%2Fdashboard">
+              Log in
+            </Link>
+          </span>
+          <Link className="underline" href="/">
+            Back to home
+          </Link>
         </div>
-      ) : null}
 
-      <form action="/api/auth/signup" method="post" className="space-y-3">
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-          className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
-        />
-
-        <Button type="submit" className="w-full">
-          Create account
-        </Button>
-      </form>
-
-      <div className="text-sm text-foreground/70">
-        Already have an account?{" "}
-        <Link className="underline" href="/login">
-          Log in
-        </Link>
+        <div className="mt-4 border-t border-[#dfbfbc] pt-4">
+          <DemoQuoteLinkButton
+            sourcePage="/signup"
+            label="Try a demo quote"
+            variant="outline"
+            className="w-full"
+          />
+        </div>
       </div>
     </main>
   );

@@ -197,10 +197,16 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
   const weeklyReminder = buildWeeklyReminder(rows30);
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 p-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-medium tracking-tight">{headline}</h1>
-        <div className="text-sm text-foreground/65">{subhead}</div>
+    <main className="forman-page space-y-8">
+      <div className="status-strip flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span>Field board active</span>
+        <span>Last 30 days of quotes, margin, and follow-up activity</span>
+      </div>
+
+      <div className="border-l-8 border-primary pl-5">
+        <div className="forman-kicker">Overview board</div>
+        <h1 className="forman-title text-4xl sm:text-6xl">{headline}</h1>
+        <div className="forman-subtitle mt-2">{subhead}</div>
       </div>
 
       <Separator />
@@ -214,9 +220,10 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
       ) : null}
 
       {!setup.hasQuote ? (
-        <section className="rounded-2xl border bg-card p-5">
-          <div className="text-sm font-medium">Send your first quote in under 5 minutes</div>
-          <div className="mt-1 text-sm text-foreground/70">
+        <section className="paper-panel p-5">
+          <div className="forman-kicker">First work order</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">Send your first quote in under 5 minutes</div>
+          <div className="mt-1 text-sm text-muted-foreground">
             Start with customer details, confirm scope, then send. You will immediately see view status, expiry, and follow-up prompts.
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -238,9 +245,9 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
       </div>
 
       {weeklyReminder ? (
-        <section className="rounded-2xl border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-foreground/55">Weekly reminder</div>
-          <div className="mt-1 text-sm text-foreground/80">{weeklyReminder}</div>
+        <section className="paper-panel p-4">
+          <div className="forman-kicker">Weekly reminder</div>
+          <div className="mt-2 text-sm text-foreground">{weeklyReminder}</div>
           <div className="mt-3">
             <Button asChild variant="outline" size="sm">
               <Link href="/reports">Review insights</Link>
@@ -251,34 +258,34 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
 
       <section className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-foreground/85">Needs attention</div>
-          <div className="text-xs text-foreground/50">
+          <div className="forman-kicker">Needs attention</div>
+          <div className="text-xs text-muted-foreground">
             Quotes below {TARGET_MARGIN}% margin (30 days)
           </div>
         </div>
 
         {flagged.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-5 text-sm text-foreground/70">
+          <div className="paper-panel p-5 text-sm text-muted-foreground">
             No low-margin quotes in the last 30 days.
           </div>
         ) : (
-          <div className="rounded-2xl border bg-card divide-y">
+          <div className="paper-panel divide-y divide-[#dfbfbc]">
             {flagged.slice(0, 5).map((q) => (
               <Link
                 key={q.id}
                 href={`/quotes/${q.id}`}
-                className="block px-4 py-3 hover:bg-white/5 transition"
+                className="block px-4 py-4 transition hover:bg-muted"
               >
                 <div className="flex justify-between">
                   <div>
-                    <div className="text-sm">{q.customer}</div>
-                    <div className="text-xs text-foreground/60">
+                    <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">{q.customer}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                       {q.trade} · {fmtDate(q.created_at)}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm">{fmtMoney(q.total)}</div>
-                    <div className="text-xs text-destructive">
+                    <div className="font-headline text-lg font-bold">{fmtMoney(q.total)}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-destructive">
                       {q.marginPct.toFixed(1)}%
                     </div>
                   </div>
@@ -290,34 +297,33 @@ const setupComplete = setup.pricingSet && setup.stripeConnected && setup.hasQuot
       </section>
 
       <section className="space-y-4">
-        <div className="text-sm font-medium text-foreground/85">Recent quotes</div>
+        <div className="forman-kicker">Recent quotes</div>
 
         {rows5.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-6">
-            <div className="text-sm">No quotes yet</div>
+          <div className="paper-panel p-6">
+            <div className="font-headline text-xl font-bold uppercase">No quotes yet</div>
             <div className="mt-4">
-              {/* ✅ popup gate */}
               <Button asChild className="w-full">
-  <Link href="/quotes/new">New Quote</Link>
-</Button>
+                <Link href="/quotes/new">New Quote</Link>
+              </Button>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border bg-card divide-y">
+          <div className="paper-panel divide-y divide-[#dfbfbc]">
             {rows5.map((q) => (
               <Link
                 key={q.id}
                 href={`/quotes/${q.id}`}
-                className="block px-4 py-3 hover:bg-white/5 transition"
+                className="block px-4 py-4 transition hover:bg-muted"
               >
                 <div className="flex justify-between">
                   <div>
-                    <div className="text-sm">{getCustomerName2(q)}</div>
-                    <div className="text-xs text-foreground/60">
+                    <div className="font-headline text-lg font-bold uppercase tracking-[-0.03em]">{getCustomerName2(q)}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                       {q.trade} · {fmtDate(q.created_at)}
                     </div>
                   </div>
-                  <div className="text-sm">{fmtMoney(getTotal2(q))}</div>
+                  <div className="font-headline text-lg font-bold">{fmtMoney(getTotal2(q))}</div>
                 </div>
               </Link>
             ))}
@@ -362,12 +368,12 @@ function SetupChecklist({
   const doneCount = items.filter((i) => i.done).length;
 
   return (
-    <section className="rounded-2xl border bg-card p-5">
+    <section className="paper-panel p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-sm text-foreground/70">Setup</div>
-          <div className="text-lg font-medium">One-time setup</div>
-          <div className="text-xs text-foreground/60">
+          <div className="forman-kicker">Setup</div>
+          <div className="mt-2 font-headline text-2xl font-bold uppercase tracking-[-0.04em]">One-time setup</div>
+          <div className="text-xs text-muted-foreground">
             {doneCount}/3 complete.
           </div>
         </div>
@@ -378,18 +384,18 @@ function SetupChecklist({
           <Link
             key={it.label}
             href={it.href}
-            className="group flex items-start justify-between rounded-xl border bg-background/40 px-4 py-3 transition hover:bg-white/5"
+            className="paper-inset group flex items-start justify-between px-4 py-3 transition hover:border-border"
           >
             <div className="pr-3">
               <div className="text-sm">
                 <span className={it.done ? "text-emerald-500" : "text-foreground/80"}>
                   {it.done ? "✓" : "•"}
                 </span>{" "}
-                <span className={it.done ? "line-through text-foreground/50" : ""}>{it.label}</span>
+                <span className={it.done ? "line-through text-muted-foreground" : "font-bold uppercase tracking-[0.06em]"}>{it.label}</span>
               </div>
-              <div className="mt-1 text-xs text-foreground/60">{it.helper}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{it.helper}</div>
             </div>
-            <div className="text-xs text-foreground/50 transition group-hover:text-foreground/70">
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground transition group-hover:text-foreground">
               {it.done ? "Done" : "Open →"}
             </div>
           </Link>
@@ -402,9 +408,9 @@ function SetupChecklist({
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-5">
-      <div className="text-xs text-foreground/60">{label}</div>
-      <div className="mt-1 text-xl font-medium tracking-tight">{value}</div>
+    <div className="metric-card">
+      <div className="forman-kicker">{label}</div>
+      <div className="mt-2 font-headline text-3xl font-black tracking-[-0.04em]">{value}</div>
     </div>
   );
 }

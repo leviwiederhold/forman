@@ -25,9 +25,9 @@ export default async function VerifyEmailPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Link
-          href="/login"
+          href="/login?redirectTo=%2Fdashboard"
           className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm text-black"
         >
           Go to login

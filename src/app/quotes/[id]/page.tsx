@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatExpiresIn, getQuoteExpirationStatus } from "@/lib/quotes/expiration";
 import { FollowUpTemplates } from "@/components/quotes/FollowUpTemplates";
 import { QuoteActions } from "./quote-actions";
-import { DeleteQuoteButton } from "@/components/delete-quote-button";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +50,23 @@ type QuoteViewRow = {
 type PageProps = {
   params: Promise<{ id: string }>;
 };
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
 
 function asArray(v: JsonValue | null): unknown[] {
   return Array.isArray(v) ? v : [];
@@ -117,16 +133,33 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   // ✅ Email verification required (launch hardening)
   if (!auth.user.email_confirmed_at) redirect("/verify-email");
 
-  const { data: quote, error } = await supabase
+  const { data: quoteRow, error } = await supabase
     .from("quotes")
-    .select(
-      "id, trade, customer_name, customer_address, status, subtotal, tax, total, line_items_json, created_at, expires_at, share_token, low_margin_acknowledged_at"
-    )
+    .select("*")
     .eq("id", id)
     .eq("user_id", auth.user.id)
-    .single<QuoteView>();
+    .single<Record<string, unknown>>();
 
-  if (error || !quote) redirect("/quotes");
+  if (error || !quoteRow) redirect("/quotes");
+
+  const row = asRecord(quoteRow);
+  if (!row) redirect("/quotes");
+
+  const quote: QuoteView = {
+    id: asString(row.id) ?? id,
+    trade: asString(row.trade) ?? "",
+    customer_name: asString(row.customer_name),
+    customer_address: asString(row.customer_address),
+    status: asString(row.status),
+    subtotal: asNumber(row.subtotal),
+    tax: asNumber(row.tax),
+    total: asNumber(row.total),
+    line_items_json: (row.line_items_json as JsonValue | null) ?? null,
+    created_at: asString(row.created_at),
+    expires_at: asString(row.expires_at),
+    share_token: asString(row.share_token),
+    low_margin_acknowledged_at: asString(row.low_margin_acknowledged_at),
+  };
 
   const items = asArray(quote.line_items_json);
   const SAMPLE_SIZE = 20;
@@ -236,21 +269,22 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   const expiresAtLabel = fmtDate(quote.expires_at);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
+    <main className="forman-page">
       <div className="flex items-center justify-between gap-3">
         <Button asChild variant="outline">
           <Link href="/quotes">← Back</Link>
         </Button>
-        <div className="text-sm text-foreground/60">Quote</div>
+        <div className="forman-kicker">Quote</div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-5">
+      <div className="paper-panel p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="truncate text-lg font-medium">
+            <div className="forman-kicker">Work order</div>
+            <div className="truncate font-headline text-4xl font-black uppercase tracking-[-0.04em]">
               {quote.customer_name ?? "Unnamed"}
             </div>
-            <div className="text-xs text-foreground/60">
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
               {quote.trade} · {quote.status ?? "draft"}
               {quote.created_at
                 ? ` · ${new Date(quote.created_at).toLocaleString()}`
@@ -287,8 +321,8 @@ export default async function QuoteDetailPage({ params }: PageProps) {
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-foreground/60">Total</div>
-            <div className="text-lg font-medium">{money(quote.total)}</div>
+            <div className="forman-kicker">Total</div>
+            <div className="font-headline text-3xl font-black">{money(quote.total)}</div>
           </div>
         </div>
 
@@ -314,25 +348,18 @@ export default async function QuoteDetailPage({ params }: PageProps) {
             />
           </div>
 
-          <div className="mt-3 flex justify-end">
-            <DeleteQuoteButton
-              quoteId={quote.id}
-              afterDeleteHref="/quotes"
-              variant="destructive"
-            />
-          </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-5">
-        <div className="text-sm text-foreground/80">Totals</div>
-        <div className="mt-3 rounded-xl border p-3 text-sm">
+      <div className="paper-panel p-5">
+        <div className="forman-kicker">Totals</div>
+        <div className="mt-3 paper-inset p-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-foreground/70">Subtotal</span>
+            <span className="text-muted-foreground">Subtotal</span>
             <span>{money(quote.subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-foreground/70">Tax</span>
+            <span className="text-muted-foreground">Tax</span>
             <span>{money(quote.tax)}</span>
           </div>
           <div className="flex justify-between font-medium">
@@ -342,12 +369,12 @@ export default async function QuoteDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-5">
-        <div className="text-sm text-foreground/80">Line items</div>
+      <div className="paper-panel p-5">
+        <div className="forman-kicker">Line items</div>
 
-        <div className="mt-3 rounded-xl border p-3 text-sm">
+        <div className="mt-3 paper-inset p-3 text-sm">
           {items.length === 0 ? (
-            <div className="text-foreground/60">No line items found.</div>
+            <div className="text-muted-foreground">No line items found.</div>
           ) : (
             <div className="space-y-2">
               {items.map((raw, idx) => {
@@ -365,7 +392,7 @@ export default async function QuoteDetailPage({ params }: PageProps) {
                   >
                     <div className="min-w-0">
                       <div className="truncate text-foreground/80">{name}</div>
-                      <div className="text-xs text-foreground/60">
+                      <div className="text-xs text-muted-foreground">
                         {qty ? `${qty} ${unit}` : ""}
                         {qty ? ` × $${unitPrice.toFixed(2)}` : ""}
                       </div>

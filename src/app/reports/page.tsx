@@ -291,12 +291,16 @@ const depositEnabled = Boolean(prof?.accept_deposits_on_share) && depositPercent
   const decisions = buildDecisionSignals(rows90);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-medium tracking-tight">Insights</h1>
-          <div className="text-sm text-foreground/65">Practical recommendations from your quote history.</div>
-        </div>
+    <main className="forman-page space-y-8">
+      <div className="status-strip flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span>Decision board</span>
+        <span>Practical recommendations from your live quote history</span>
+      </div>
+
+      <div className="border-l-8 border-primary pl-5">
+        <div className="forman-kicker">Reports</div>
+        <h1 className="forman-title text-4xl">Insights</h1>
+        <div className="forman-subtitle mt-2">Practical recommendations from your quote history.</div>
       </div>
 
 
@@ -466,7 +470,7 @@ function InsightsSection({
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
-        <div className="text-sm font-medium text-foreground/85">Recommended actions</div>
+        <div className="forman-kicker">Recommended actions</div>
 
         {locked ? (
           <a
@@ -482,33 +486,33 @@ function InsightsSection({
         {cards.map((c, idx) => (
           <details
             key={c.title}
-            className="group overflow-hidden rounded-2xl border bg-card"
+            className="group overflow-hidden border-2 border-border bg-card"
             open={idx === 0}
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm">
-              <span className="font-medium">{c.title}</span>
-              <span className="text-xs text-foreground/60 transition group-open:rotate-180">▾</span>
+              <span className="font-headline text-xl font-bold uppercase tracking-[-0.03em]">{c.title}</span>
+              <span className="text-xs text-muted-foreground transition group-open:rotate-180">▾</span>
             </summary>
 
-            <div className="relative border-t border-white/10 px-4 py-4">
+            <div className="relative border-t-2 border-[#dfbfbc] px-4 py-4">
               <div
                 className={
                   locked
-                    ? "text-sm text-foreground/70 blur-sm select-none"
-                    : "text-sm text-foreground/70"
+                    ? "text-sm text-muted-foreground blur-sm select-none"
+                    : "text-sm text-muted-foreground"
                 }
               >
                 {c.body}
               </div>
 
               {locked ? (
-                <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-background/90 via-background/30 to-transparent px-4 py-4">
-                  <div className="text-xs text-foreground/70">
+                <div className="absolute inset-0 flex items-end justify-between bg-background/95 px-4 py-4">
+                  <div className="text-xs text-muted-foreground">
                     Trial ended. Subscribe to view full recommendations.
                   </div>
                   <a
                     href="/billing"
-                    className="rounded-lg border bg-background/60 px-3 py-1.5 text-xs transition hover:bg-white/5"
+                    className="border-2 border-border bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] transition hover:bg-muted"
                   >
                     Subscribe
                   </a>
@@ -516,7 +520,7 @@ function InsightsSection({
               ) : c.action ? (
                 <a
                   href={c.action.href}
-                  className="mt-3 inline-flex text-xs underline text-foreground/70 hover:text-foreground"
+                  className="mt-3 inline-flex text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
                 >
                   {c.action.label}
                 </a>
@@ -542,13 +546,13 @@ function QuoteVolumeChart({
   const max = Math.max(1, ...data.map((d) => d.count));
 
   return (
-    <div className="rounded-2xl border bg-card p-5">
+    <div className="paper-panel p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm text-foreground/85">{title}</div>
-          {subtitle ? <div className="text-xs text-foreground/60">{subtitle}</div> : null}
+          <div className="forman-kicker">{title}</div>
+          {subtitle ? <div className="text-xs text-muted-foreground">{subtitle}</div> : null}
         </div>
-        <div className="text-xs text-foreground/60">Max/day: {max}</div>
+        <div className="text-xs text-muted-foreground">Max/day: {max}</div>
       </div>
 
       <div className="mt-4">
@@ -558,7 +562,7 @@ function QuoteVolumeChart({
             return (
               <div key={`${d.day}-${idx}`} className="flex w-full flex-col items-center gap-1">
                 <div
-                  className="w-full rounded-md bg-foreground/20"
+                  className="w-full bg-primary/80"
                   style={{ height: `${Math.max(4, h)}px` }}
                   title={`${d.day}: ${d.count}`}
                 />
@@ -567,7 +571,7 @@ function QuoteVolumeChart({
           })}
         </div>
 
-        <div className="mt-3 flex justify-between text-[10px] text-foreground/50">
+        <div className="mt-3 flex justify-between text-[10px] text-muted-foreground">
           <span>{data[0]?.day}</span>
           <span>{data[Math.floor(data.length / 2)]?.day}</span>
           <span>{data[data.length - 1]?.day}</span>
@@ -579,9 +583,9 @@ function QuoteVolumeChart({
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-5">
-      <div className="text-xs text-foreground/60">{label}</div>
-      <div className="mt-1 text-xl font-medium tracking-tight">{value}</div>
+    <div className="metric-card">
+      <div className="forman-kicker">{label}</div>
+      <div className="mt-2 font-headline text-3xl font-black tracking-[-0.04em]">{value}</div>
     </div>
   );
 }
